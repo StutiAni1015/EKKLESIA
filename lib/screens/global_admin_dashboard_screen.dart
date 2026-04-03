@@ -141,6 +141,12 @@ class _GlobalAdminDashboardScreenState
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: Row(
                 children: [
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: const Icon(Icons.arrow_back,
+                        color: AppColors.primary, size: 24),
+                  ),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -166,7 +172,7 @@ class _GlobalAdminDashboardScreenState
                       IconButton(
                         icon: Icon(Icons.notifications_outlined,
                             color: textColor),
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                       ),
                       Positioned(
                         right: 10,
@@ -382,7 +388,7 @@ class _GlobalAdminDashboardScreenState
                         ),
                         const Spacer(),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Full applications list coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                           child: Text(
                             'View All',
                             style: TextStyle(
@@ -634,7 +640,7 @@ class _GlobalAdminDashboardScreenState
                                       ),
                                     ),
                                     GestureDetector(
-                                      onTap: () {},
+                                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review module coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                                       child: Container(
                                         padding:
                                             const EdgeInsets.symmetric(

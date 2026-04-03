@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/app_colors.dart';
 import '../core/app_localizations.dart';
 import 'welcome_screen.dart';
@@ -124,20 +125,64 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
                           child: Column(
                             children: [
+                              // App logo
                               Container(
-                                width: 64,
-                                height: 64,
+                                width: 110,
+                                height: 110,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: AppColors.sage.withOpacity(0.2),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      AppColors.primary.withOpacity(0.15),
+                                      AppColors.primary.withOpacity(0.30),
+                                    ],
+                                  ),
+                                  border: Border.all(
+                                    color: AppColors.primary.withOpacity(0.25),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.18),
+                                      blurRadius: 24,
+                                      spreadRadius: 4,
+                                    ),
+                                  ],
                                 ),
-                                child: const Icon(
-                                  Icons.language,
-                                  color: AppColors.sage,
-                                  size: 32,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.church,
+                                      color: AppColors.primary,
+                                      size: 44,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'ε',
+                                      style: GoogleFonts.playfairDisplay(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 14),
+                              Text(
+                                'EKKLESIA',
+                                style: GoogleFonts.playfairDisplay(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 3,
+                                  color: isDark ? Colors.white : const Color(0xFF2D3748),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
                               Text(
                                 'Welcome to our community',
                                 textAlign: TextAlign.center,

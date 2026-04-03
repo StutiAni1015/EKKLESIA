@@ -85,7 +85,7 @@ class _BibleSelectionGridScreenState
                         ),
                         IconButton(
                           icon: Icon(Icons.search, color: textColor),
-                          onPressed: () {},
+                          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bible search coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                         ),
                       ],
                     ),

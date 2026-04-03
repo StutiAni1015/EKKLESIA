@@ -18,6 +18,9 @@ class _MemberNotificationAlertScreenState
 
   int _selectedIndex = 0;
 
+  // Indices the user has dismissed/read
+  final Set<int> _readIndices = {};
+
   static const _notifications = [
     _NotifData(
       church: 'Grace Global Church',
@@ -96,8 +99,11 @@ class _MemberNotificationAlertScreenState
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
     final subColor =
         isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
-    final newCount =
-        _notifications.where((n) => n.isNew).length;
+    final newCount = _notifications
+        .asMap()
+        .entries
+        .where((e) => e.value.isNew && !_readIndices.contains(e.key))
+        .length;
 
     return Scaffold(
       backgroundColor: bg,
@@ -127,7 +133,9 @@ class _MemberNotificationAlertScreenState
                   const Spacer(),
                   if (newCount > 0)
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () => setState(() => _readIndices.addAll(
+                            List.generate(_notifications.length, (i) => i),
+                          )),
                       child: Text(
                         'Mark all read',
                         style: TextStyle(
@@ -207,6 +215,7 @@ class _MemberNotificationAlertScreenState
                 separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
                   final n = _notifications[i];
+                  final isNew = n.isNew && !_readIndices.contains(i);
                   final isSelected = i == _selectedIndex;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedIndex = i),
@@ -216,14 +225,14 @@ class _MemberNotificationAlertScreenState
                         color: cardBg,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: n.isNew
+                          color: isNew
                               ? AppColors.primary.withOpacity(0.25)
                               : (isDark
                                   ? const Color(0xFF334155)
                                   : const Color(0xFFE5E7EB)),
-                          width: n.isNew ? 1.5 : 1,
+                          width: isNew ? 1.5 : 1,
                         ),
-                        boxShadow: n.isNew
+                        boxShadow: isNew
                             ? [
                                 BoxShadow(
                                   color:
@@ -272,7 +281,7 @@ class _MemberNotificationAlertScreenState
                                               ),
                                             ),
                                           ),
-                                          if (n.isNew)
+                                          if (isNew)
                                             Container(
                                               width: 8,
                                               height: 8,
@@ -347,10 +356,11 @@ class _MemberNotificationAlertScreenState
                                   style: TextStyle(
                                       fontSize: 11, color: subColor),
                                 ),
-                                if (n.isNew) ...[
+                                if (isNew) ...[
                                   const SizedBox(width: 10),
                                   GestureDetector(
-                                    onTap: () {},
+                                    onTap: () => setState(
+                                        () => _readIndices.add(i)),
                                     child: Text(
                                       'Dismiss',
                                       style: TextStyle(
@@ -365,7 +375,7 @@ class _MemberNotificationAlertScreenState
                               ],
                             ),
                           ),
-                          if (isSelected && n.isNew)
+                          if (isSelected && isNew)
                             Padding(
                               padding:
                                   const EdgeInsets.fromLTRB(14, 0, 14, 14),
@@ -373,7 +383,8 @@ class _MemberNotificationAlertScreenState
                                 children: [
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () {},
+                                      onTap: () =>
+                                          setState(() => _readIndices.add(i)),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 10),
@@ -399,7 +410,8 @@ class _MemberNotificationAlertScreenState
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () {},
+                                      onTap: () =>
+                                          setState(() => _readIndices.add(i)),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 10),

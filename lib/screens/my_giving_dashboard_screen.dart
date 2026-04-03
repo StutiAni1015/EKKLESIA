@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../widgets/app_bottom_bar.dart';
 import 'create_giving_request_screen.dart';
 import 'location_currency_screen.dart';
 
@@ -84,6 +85,9 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
 
     return Scaffold(
       backgroundColor: bg,
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabGivings),
+      floatingActionButton: buildCenterFab(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -156,7 +160,12 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
                       IconButton(
                         icon: Icon(Icons.notifications_none,
                             color: textColor),
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Giving notifications coming soon!'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -302,7 +311,12 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
                                 ),
                               ),
                               TextButton.icon(
-                                onPressed: () {},
+                                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('All giving needs coming soon!'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                ),
                                 icon: const SizedBox.shrink(),
                                 label: Row(
                                   children: const [
@@ -327,7 +341,7 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
 
                         // Horizontal fund cards
                         SizedBox(
-                          height: 260,
+                          height: 290,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(
@@ -445,17 +459,6 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
               ],
             ),
 
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                bottomPadding: MediaQuery.of(context).padding.bottom,
-                onHome: () => Navigator.maybePop(context),
-              ),
-            ),
           ],
         ),
       ),
@@ -578,7 +581,12 @@ class _FundCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Online giving coming soon! 🙏'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -680,123 +688,6 @@ class _HistoryRow extends StatelessWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  final bool isDark;
-  final double bottomPadding;
-  final VoidCallback onHome;
-
-  const _BottomNav({
-    required this.isDark,
-    required this.bottomPadding,
-    required this.onHome,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final borderColor =
-        isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, bottomPadding + 8),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(top: BorderSide(color: borderColor)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _NavItem(
-            icon: Icons.home,
-            label: 'Home',
-            active: false,
-            onTap: onHome,
-          ),
-          _NavItem(
-            icon: Icons.volunteer_activism,
-            label: 'Giving',
-            active: true,
-            onTap: () {},
-            filled: true,
-          ),
-          // Center FAB space
-          const SizedBox(
-            width: 56,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.auto_stories, color: AppColors.primary, size: 28),
-                SizedBox(height: 2),
-                Text(
-                  'BIBLE',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _NavItem(
-            icon: Icons.group,
-            label: 'Community',
-            active: false,
-            onTap: () {},
-          ),
-          _NavItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            active: false,
-            onTap: () {},
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final bool filled;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-    this.filled = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? AppColors.primary : const Color(0xFF94A3B8);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 2),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _FundItem {
   final String title;

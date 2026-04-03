@@ -175,15 +175,18 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
                         const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     child: Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
+                        GestureDetector(
+                          onTap: () => Navigator.maybePop(context),
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.arrow_back,
+                                color: AppColors.primary, size: 20),
                           ),
-                          child: const Icon(Icons.menu,
-                              color: AppColors.primary, size: 20),
                         ),
                         Expanded(
                           child: Text(

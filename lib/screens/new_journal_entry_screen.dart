@@ -272,7 +272,7 @@ class _NewJournalEntryScreenState extends State<NewJournalEntryScreen> {
 
                         // Add tag button (dashed)
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Custom tags coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 7),

@@ -99,6 +99,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
         child: SafeArea(
           child: Column(
             children: [
+
               // Main hero area
               Expanded(
                 child: Stack(
@@ -156,21 +157,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                                 ),
                               ),
 
-                              // App logo in center of globe
-                              ClipOval(
-                                child: Container(
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.white.withOpacity(0.15),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Image.asset(
-                                      'assets/logo.png',
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                ),
-                              ),
 
                               // Floating heart 1
                               Positioned(
@@ -225,6 +211,38 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             opacity: _fadeAnim,
                             child: Column(
                               children: [
+                                // Small logo circle
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(0.88),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.white.withOpacity(0.4),
+                                        blurRadius: 12,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.church,
+                                    color: AppColors.primary,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'EKKLESIA',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 4,
+                                    color: const Color(0xFF4A4A4A),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
                                 Text(
                                   _welcomeText,
                                   style: GoogleFonts.playfairDisplay(

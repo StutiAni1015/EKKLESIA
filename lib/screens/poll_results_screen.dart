@@ -473,7 +473,7 @@ class _PollResultsScreenState extends State<PollResultsScreen>
                     const SizedBox(height: 20),
                     // Share results
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share results coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                       child: Container(
                         width: double.infinity,
                         height: 48,

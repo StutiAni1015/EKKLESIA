@@ -223,7 +223,7 @@ class _PastorAwaitingApprovalScreenState
                             width: double.infinity,
                             height: 56,
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () => Navigator.maybePop(context),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: babyBlue,
                                 foregroundColor: Colors.white,

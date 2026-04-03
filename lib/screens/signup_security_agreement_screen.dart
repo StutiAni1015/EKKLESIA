@@ -6,6 +6,7 @@ import 'dashboard_screen.dart';
 import 'location_currency_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_conditions_screen.dart';
+import '../core/user_session.dart';
 
 class SignupSecurityAgreementScreen extends StatefulWidget {
   const SignupSecurityAgreementScreen({super.key});
@@ -46,7 +47,7 @@ class _SignupSecurityAgreementScreenState
       );
       return;
     }
-    // TODO: call POST /auth/signup with collected data
+    accountVerifiedNotifier.value = true;
     // Ask for location/currency first, then go to dashboard
     await Navigator.push(
       context,

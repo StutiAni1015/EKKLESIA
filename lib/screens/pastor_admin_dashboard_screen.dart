@@ -4,6 +4,7 @@ import 'bible_books_index_screen.dart';
 import 'review_member_approval_screen.dart';
 import 'content_moderation_screen.dart';
 import 'pastor_send_notification_screen.dart';
+import 'treasury_access_code_screen.dart';
 
 class PastorAdminDashboardScreen extends StatefulWidget {
   const PastorAdminDashboardScreen({super.key});
@@ -282,7 +283,7 @@ class _PastorAdminDashboardScreenState
                               cardBg: cardBg,
                               borderColor: borderColor,
                               textColor: textColor,
-                              onTap: () {},
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Church Profile coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                             ),
                             _DashCard(
                               icon: Icons.gavel,
@@ -316,12 +317,29 @@ class _PastorAdminDashboardScreenState
                                 ),
                               ),
                             ),
+                            _DashCard(
+                              icon: Icons.vpn_key_rounded,
+                              iconBg: const Color(0xFFFEF3C7),
+                              iconColor: const Color(0xFFD97706),
+                              label: 'Treasury Code',
+                              cardBg: cardBg,
+                              borderColor: borderColor,
+                              textColor: textColor,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      const TreasuryAccessCodeScreen(
+                                          role: 'Pastor'),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         // Full-width Ministry Reports
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ministry Reports coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -389,7 +407,7 @@ class _PastorAdminDashboardScreenState
                             ),
                             const Spacer(),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Full activity log coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                               style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   tapTargetSize:

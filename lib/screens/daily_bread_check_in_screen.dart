@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'personalized_daily_bread_screen.dart';
 import 'kids_daily_bread_screen.dart';
+import 'kids_home_screen.dart';
 
 class DailyBreadCheckInScreen extends StatefulWidget {
   const DailyBreadCheckInScreen({super.key});
@@ -50,7 +51,7 @@ class _DailyBreadCheckInScreenState extends State<DailyBreadCheckInScreen>
     if (_kidsMode) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const KidsDailyBreadScreen()),
+        MaterialPageRoute(builder: (_) => const KidsHomeScreen()),
       );
       return;
     }

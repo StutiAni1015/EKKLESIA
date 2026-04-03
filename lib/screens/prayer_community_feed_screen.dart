@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
 import 'add_prayer_request_screen.dart';
+import 'bible_books_index_screen.dart';
 
 class PrayerCommunityFeedScreen extends StatefulWidget {
   const PrayerCommunityFeedScreen({super.key});
@@ -14,41 +16,7 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  final _requests = [
-    _PrayerItem(
-      name: 'Sarah Jenkins',
-      timeAgo: '2 hours ago',
-      body:
-          "Please pray for my mother's upcoming surgery this Tuesday. We are trusting in God's healing hands and asking for peace for our family during this time.",
-      prayCount: 42,
-      prayLabel: 'people prayed',
-      isPraise: false,
-      initials: 'SJ',
-      color: Color(0xFFDCAE96),
-    ),
-    _PrayerItem(
-      name: 'David Chen',
-      timeAgo: '5 hours ago',
-      body:
-          'Requesting strength and guidance during a difficult transition at work. Trusting that when one door closes, the Lord opens another.',
-      prayCount: 15,
-      prayLabel: 'people prayed',
-      isPraise: false,
-      initials: 'DC',
-      color: Color(0xFFB9D1EA),
-    ),
-    _PrayerItem(
-      name: 'Maria Rodriguez',
-      timeAgo: 'Yesterday',
-      body:
-          "Praising God for my son's recovery from the flu! Thank you all for your prayers last week. God is good!",
-      prayCount: 89,
-      prayLabel: 'people joined in praise',
-      isPraise: true,
-      initials: 'MR',
-      color: Color(0xFFB2C2A3),
-    ),
-  ];
+  final _requests = <_PrayerItem>[];
 
   final Set<int> _prayed = {};
 
@@ -114,8 +82,12 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.search, color: textColor),
-                              onPressed: () {},
+                              icon: Icon(Icons.menu_book, color: AppColors.primary),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const BibleBooksIndexScreen()),
+                              ),
                             ),
                           ],
                         ),
@@ -193,19 +165,155 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
                   ),
 
                   // My Requests tab
-                  Center(
-                    child: Text(
-                      'Your prayer requests appear here.',
-                      style: TextStyle(color: subColor),
-                    ),
+                  ValueListenableBuilder<List<UserPrayer>>(
+                    valueListenable: myPrayerRequestsNotifier,
+                    builder: (context, prayers, _) {
+                      final mine = prayers
+                          .where((p) => !p.isAnswered)
+                          .toList()
+                          .reversed
+                          .toList();
+                      if (mine.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.volunteer_activism_outlined,
+                                    size: 48,
+                                    color: AppColors.primary.withOpacity(0.4)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No prayer requests yet.\nTap + to share yours.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: subColor, height: 1.6),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        padding: EdgeInsets.fromLTRB(
+                            16, 16, 16,
+                            MediaQuery.of(context).padding.bottom + 96),
+                        itemCount: mine.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final p = mine[i];
+                          return _MyPrayerCard(
+                            prayer: p,
+                            cardBg: cardBg,
+                            textColor: textColor,
+                            subColor: subColor,
+                            onMarkAnswered: () {
+                              setState(() => p.isAnswered = true);
+                              // Trigger notifier rebuild
+                              myPrayerRequestsNotifier.value = [
+                                ...myPrayerRequestsNotifier.value
+                              ];
+                            },
+                          );
+                        },
+                      );
+                    },
                   ),
 
                   // Answered tab
-                  Center(
-                    child: Text(
-                      'Answered prayers appear here.',
-                      style: TextStyle(color: subColor),
-                    ),
+                  ValueListenableBuilder<List<UserPrayer>>(
+                    valueListenable: myPrayerRequestsNotifier,
+                    builder: (context, prayers, _) {
+                      final answered =
+                          prayers.where((p) => p.isAnswered).toList().reversed.toList();
+                      if (answered.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.check_circle_outline,
+                                    size: 48,
+                                    color: AppColors.primary.withOpacity(0.4)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Answered prayers will appear here.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: subColor, height: 1.6),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      return ListView.separated(
+                        padding: EdgeInsets.fromLTRB(
+                            16, 16, 16,
+                            MediaQuery.of(context).padding.bottom + 96),
+                        itemCount: answered.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final p = answered[i];
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: const Color(0xFF22C55E)
+                                      .withOpacity(0.3)),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF22C55E)
+                                        .withOpacity(0.12),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.check,
+                                      color: Color(0xFF22C55E), size: 18),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Answered Prayer',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF22C55E),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        p.isAnonymous
+                                            ? 'Anonymous request'
+                                            : p.body,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          height: 1.5,
+                                          color: textColor.withOpacity(0.85),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ],
               ),
@@ -424,6 +532,123 @@ class _PrayerCard extends StatelessWidget {
   }
 }
 
+class _MyPrayerCard extends StatelessWidget {
+  final UserPrayer prayer;
+  final Color cardBg;
+  final Color textColor;
+  final Color subColor;
+  final VoidCallback onMarkAnswered;
+
+  const _MyPrayerCard({
+    required this.prayer,
+    required this.cardBg,
+    required this.textColor,
+    required this.subColor,
+    required this.onMarkAnswered,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primary.withOpacity(0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  prayer.isAnonymous ? 'Anonymous' : 'My Request',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _timeAgo(prayer.addedAt),
+                style: TextStyle(fontSize: 11, color: subColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            prayer.body,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.6,
+              color: textColor.withOpacity(0.85),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Divider(color: AppColors.primary.withOpacity(0.08), height: 1),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: onMarkAnswered,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: const Color(0xFF22C55E).withOpacity(0.3)),
+                ),
+                alignment: Alignment.center,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        color: Color(0xFF22C55E), size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'Mark as Answered',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF22C55E),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+}
+
 class _BottomNav extends StatelessWidget {
   final bool isDark;
   final double padding;
@@ -458,7 +683,7 @@ class _BottomNav extends StatelessWidget {
             icon: Icons.group,
             label: 'Groups',
             active: false,
-            onTap: () {},
+            onTap: () => Navigator.maybePop(context),
           ),
           // FAB placeholder space
           const SizedBox(width: 56),
@@ -472,7 +697,7 @@ class _BottomNav extends StatelessWidget {
             icon: Icons.person_outline,
             label: 'Profile',
             active: false,
-            onTap: () {},
+            onTap: () => Navigator.maybePop(context),
           ),
         ],
       ),

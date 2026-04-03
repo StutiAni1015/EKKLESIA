@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import 'plan_checklist_sheet.dart';
 
 class DiscoverPlansScreen extends StatefulWidget {
   const DiscoverPlansScreen({super.key});
@@ -22,13 +23,75 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
 
   static const _bibleReadingPlans = [
     _Plan(
-      title: 'Proverbs in 31 Days',
+      title: '🙏 Prayer & Strength',
       description:
-          'A daily wisdom journey through the book of Proverbs. Gain practical insight for your life.',
+          'A 21-day journey through the Psalms and New Testament letters to build a powerful, consistent prayer life. Each day pairs a Psalm for worship with a passage from Philippians, Ephesians, Romans, or 1 Peter for spiritual strength.',
+      duration: '21 Days',
+      badge: 'New',
+      gradientStart: Color(0xFF3B5998),
+      gradientEnd: Color(0xFF8B5CF6),
+      todayReadings: [
+        'Psalms 1–3',
+        'Philippians 1',
+        'Memory Verse: Philippians 4:6–7',
+      ],
+    ),
+    _Plan(
+      title: '📖 Wisdom of God',
+      description:
+          'A 31-day deep dive into Proverbs and James. One chapter of Proverbs per day (matching the date of the month) plus James and Ecclesiastes for the wisdom that comes from above — pure, peaceable, and full of mercy.',
       duration: '31 Days',
       badge: 'Popular',
       gradientStart: Color(0xFF6B7FD4),
       gradientEnd: Color(0xFF9B8BBF),
+      todayReadings: [
+        'Proverbs 1',
+        'James 1:1–18',
+        'Memory Verse: Proverbs 1:7',
+      ],
+    ),
+    _Plan(
+      title: '✝️ Life of Jesus',
+      description:
+          'Walk with Jesus for 30 days through all four Gospels. Matthew reveals the King, Mark shows the Servant, Luke focuses on the Son of Man, and John reveals the Son of God. See the full portrait of Christ day by day.',
+      duration: '30 Days',
+      badge: 'Featured',
+      gradientStart: Color(0xFFB45309),
+      gradientEnd: Color(0xFFD97706),
+      todayReadings: [
+        'Matthew 1–2',
+        'Luke 1:1–38',
+        'Memory Verse: John 1:14',
+      ],
+    ),
+    _Plan(
+      title: '🔥 Discipline & Growth',
+      description:
+          'A 40-day challenge for serious disciples. Walk through Exodus, Romans, Joshua, Hebrews, and Galatians — the story of redemption, law, freedom, and faith. Designed for those ready to be stretched and transformed.',
+      duration: '40 Days',
+      badge: null,
+      gradientStart: Color(0xFF7C3AED),
+      gradientEnd: Color(0xFFEC4899),
+      todayReadings: [
+        'Exodus 1–2',
+        'Romans 1',
+        'Memory Verse: Romans 1:16–17',
+      ],
+    ),
+    _Plan(
+      title: '📚 Full Bible Journey',
+      description:
+          'A structured 90-day overview of the entire Bible. Old Testament narratives, Psalms and Proverbs for daily wisdom, and New Testament letters for doctrine and life. Perfect for a summer, a quarter, or a personal reset.',
+      duration: '90 Days',
+      badge: 'Complete',
+      gradientStart: Color(0xFF065F46),
+      gradientEnd: Color(0xFF059669),
+      todayReadings: [
+        'Genesis 1–3',
+        'Psalm 1',
+        'Matthew 1',
+        'Memory Verse: Genesis 1:1',
+      ],
     ),
     _Plan(
       title: 'The Psalms: Songs of Life',
@@ -38,6 +101,11 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
       badge: null,
       gradientStart: Color(0xFF4A6741),
       gradientEnd: Color(0xFF8BA888),
+      todayReadings: [
+        'Psalm 1',
+        'Psalm 2',
+        'Memory Verse: Psalm 1:1–2',
+      ],
     ),
   ];
 
@@ -51,6 +119,11 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
       gradientStart: Color(0xFFEC5B13),
       gradientEnd: Color(0xFFD4966B),
       durationIcon: Icons.public,
+      todayReadings: [
+        'Acts 1:1–11',
+        'Matthew 28:16–20',
+        'Prayer Focus: North Africa',
+      ],
     ),
   ];
 
@@ -113,7 +186,13 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
                       IconButton(
                         icon: const Icon(Icons.filter_list,
                             color: AppColors.primary),
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Filter plans coming soon!'),
+                            backgroundColor: AppColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -447,16 +526,20 @@ class _PlanCard extends StatelessWidget {
                           title: plan.title,
                           totalDays: days,
                           daysCompleted: 0,
+                          todayReadings: plan.todayReadings,
                         );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                '"${plan.title}" set as your active plan.'),
-                            backgroundColor: AppColors.primary,
-                            behavior: SnackBarBehavior.floating,
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => PlanChecklistSheet(
+                            planTitle: plan.title,
+                            gradientStart: plan.gradientStart,
+                            gradientEnd: plan.gradientEnd,
+                            readings: plan.todayReadings,
+                            onComplete: () => Navigator.maybePop(context),
                           ),
                         );
-                        Navigator.maybePop(context);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -528,18 +611,18 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.group,
               label: 'Groups',
               active: false,
-              onTap: () {}),
+              onTap: () => Navigator.maybePop(context)),
           const SizedBox(width: 56),
           _NavItem(
               icon: Icons.volunteer_activism,
               label: 'Pray',
               active: false,
-              onTap: () {}),
+              onTap: () => Navigator.maybePop(context)),
           _NavItem(
               icon: Icons.person,
               label: 'Profile',
               active: false,
-              onTap: () {}),
+              onTap: () => Navigator.maybePop(context)),
         ],
       ),
     );
@@ -593,6 +676,7 @@ class _Plan {
   final Color gradientStart;
   final Color gradientEnd;
   final IconData? durationIcon;
+  final List<String> todayReadings;
 
   const _Plan({
     required this.title,
@@ -602,5 +686,6 @@ class _Plan {
     required this.gradientStart,
     required this.gradientEnd,
     this.durationIcon,
+    this.todayReadings = const [],
   });
 }

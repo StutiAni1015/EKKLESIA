@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'bible_books_index_screen.dart';
+import 'church_payment_methods_screen.dart';
 
 class ChurchAdminDashboardScreen extends StatefulWidget {
   const ChurchAdminDashboardScreen({super.key});
@@ -107,6 +108,12 @@ class _ChurchAdminDashboardScreenState
               ),
               child: Row(
                 children: [
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: const Icon(Icons.arrow_back,
+                        color: AppColors.primary, size: 24),
+                  ),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -143,7 +150,13 @@ class _ChurchAdminDashboardScreenState
                       IconButton(
                         icon: Icon(Icons.notifications_outlined,
                             color: subColor, size: 24),
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Notifications coming soon!'),
+                            backgroundColor: AppColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        ),
                       ),
                       Positioned(
                         top: 10,
@@ -358,7 +371,7 @@ class _ChurchAdminDashboardScreenState
                               borderColor: borderColor,
                               subColor: subColor,
                               textColor: textColor,
-                              onTap: () {},
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Member Approvals coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                             ),
                             _ConsoleCard(
                               title: 'Giving Requests',
@@ -370,7 +383,7 @@ class _ChurchAdminDashboardScreenState
                               borderColor: borderColor,
                               subColor: subColor,
                               textColor: textColor,
-                              onTap: () {},
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Giving Requests coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                             ),
                             _ConsoleCard(
                               title: 'Content Moderation',
@@ -383,7 +396,7 @@ class _ChurchAdminDashboardScreenState
                               borderColor: borderColor,
                               subColor: subColor,
                               textColor: textColor,
-                              onTap: () {},
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Content Moderation coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                             ),
                             _ConsoleCard(
                               title: 'Event Planning',
@@ -396,7 +409,20 @@ class _ChurchAdminDashboardScreenState
                               borderColor: borderColor,
                               subColor: subColor,
                               textColor: textColor,
-                              onTap: () {},
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Event Planning coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
+                            ),
+                            _ConsoleCard(
+                              title: 'Payment Accounts',
+                              subtitle: 'Manage UPI, cards, PayPal & bank accounts',
+                              icon: Icons.account_balance,
+                              iconBg: const Color(0xFFDCFCE7),
+                              iconColor: const Color(0xFF059669),
+                              cardBg: cardBg,
+                              borderColor: borderColor,
+                              subColor: subColor,
+                              textColor: textColor,
+                              onTap: () => Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => const ChurchPaymentMethodsScreen())),
                             ),
                           ],
                         ),
@@ -422,7 +448,7 @@ class _ChurchAdminDashboardScreenState
                             ),
                             const Spacer(),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Full activity log coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                               style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   tapTargetSize:

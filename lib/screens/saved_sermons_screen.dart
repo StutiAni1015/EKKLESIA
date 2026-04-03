@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
 import 'sermon_player_screen.dart';
 
 class SavedSermonsScreen extends StatefulWidget {
@@ -11,6 +12,7 @@ class SavedSermonsScreen extends StatefulWidget {
 
 class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
   final _searchCtrl = TextEditingController();
+  String? _selectedTopic; // null = show all
 
   static const _recentDownloads = [
     _RecentSermon(
@@ -49,6 +51,7 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
       pastor: 'Pastor David Williams',
       date: 'Oct 12, 2023',
       duration: '52m',
+      category: 'Faith',
       gradientStart: Color(0xFFEC5B13),
       gradientEnd: Color(0xFFD4966B),
     ),
@@ -57,6 +60,7 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
       pastor: 'Elder James Thompson',
       date: 'Sep 28, 2023',
       duration: '45m',
+      category: 'Love',
       gradientStart: Color(0xFF4A6741),
       gradientEnd: Color(0xFF8BA888),
     ),
@@ -65,8 +69,18 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
       pastor: 'Rev. Linda Carter',
       date: 'Aug 15, 2023',
       duration: '39m',
+      category: 'Purpose',
       gradientStart: Color(0xFF6B7FD4),
       gradientEnd: Color(0xFF9B8BBF),
+    ),
+    _SavedSermon(
+      title: 'Two Becoming One',
+      pastor: 'Pastor Michael & Sharon Evans',
+      date: 'Jul 7, 2023',
+      duration: '48m',
+      category: 'Marriage',
+      gradientStart: Color(0xFFDCAE96),
+      gradientEnd: Color(0xFFB2C2A3),
     ),
   ];
 
@@ -119,9 +133,18 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
                           ),
                         ),
                       ),
-                      IconButton(
+                      PopupMenuButton<String>(
                         icon: Icon(Icons.more_vert, color: textColor),
-                        onPressed: () {},
+                        onSelected: (v) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('$v coming soon!'),
+                          backgroundColor: AppColors.primary,
+                          behavior: SnackBarBehavior.floating,
+                        )),
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(value: 'Sort by date', child: Text('Sort by date')),
+                          PopupMenuItem(value: 'Sort by category', child: Text('Sort by category')),
+                          PopupMenuItem(value: 'Clear all saved', child: Text('Clear all saved')),
+                        ],
                       ),
                     ],
                   ),
@@ -326,17 +349,25 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           childAspectRatio: 2.8,
                           children: _topics.map((t) {
+                            final isActive = _selectedTopic == t.label;
                             return GestureDetector(
-                              onTap: () {},
-                              child: Container(
+                              onTap: () => setState(() =>
+                                  _selectedTopic = isActive ? null : t.label),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12),
                                 decoration: BoxDecoration(
-                                  color: t.bgColor.withOpacity(0.3),
+                                  color: isActive
+                                      ? t.iconColor.withOpacity(0.15)
+                                      : t.bgColor.withOpacity(0.3),
                                   borderRadius:
                                       BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: t.bgColor.withOpacity(0.4),
+                                    color: isActive
+                                        ? t.iconColor
+                                        : t.bgColor.withOpacity(0.4),
+                                    width: isActive ? 1.5 : 1,
                                   ),
                                 ),
                                 child: Row(
@@ -344,14 +375,24 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
                                     Icon(t.icon,
                                         color: t.iconColor, size: 20),
                                     const SizedBox(width: 10),
-                                    Text(
-                                      t.label,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: textColor,
+                                    Expanded(
+                                      child: Text(
+                                        t.label,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: isActive
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
+                                          color: isActive
+                                              ? t.iconColor
+                                              : textColor,
+                                        ),
                                       ),
                                     ),
+                                    if (isActive)
+                                      Icon(Icons.close,
+                                          size: 14,
+                                          color: t.iconColor),
                                   ],
                                 ),
                               ),
@@ -363,8 +404,107 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
                       // All Saved Messages
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedTopic != null
+                                    ? '$_selectedTopic Sermons'
+                                    : 'All Saved Messages',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                            if (_selectedTopic != null)
+                              GestureDetector(
+                                onTap: () =>
+                                    setState(() => _selectedTopic = null),
+                                child: Text(
+                                  'Clear',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      ValueListenableBuilder<List<SavedSermon>>(
+                        valueListenable: savedSermonsNotifier,
+                        builder: (context, saved, _) {
+                          final filtered = _selectedTopic == null
+                              ? saved
+                              : saved
+                                  .where((m) =>
+                                      m.category == _selectedTopic)
+                                  .toList();
+                          if (filtered.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                  16, 0, 16, 0),
+                              child: Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: cardBg,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                      color: borderColor,
+                                      style: BorderStyle.solid),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.bookmark_border,
+                                        size: 40,
+                                        color: AppColors.primary
+                                            .withOpacity(0.4)),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _selectedTopic != null
+                                          ? 'No saved sermons in this category.'
+                                          : 'No saved sermons yet.\nTap the bookmark icon on any sermon to save it.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: subColor,
+                                          fontSize: 13,
+                                          height: 1.6),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16),
+                            child: Column(
+                              children: filtered.map((m) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 12),
+                                  child: _SavedSermonRow(
+                                    sermon: m,
+                                    cardBg: cardBg,
+                                    borderColor: borderColor,
+                                    textColor: textColor,
+                                    subColor: subColor,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      // Featured sermons to explore
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
                         child: Text(
-                          'All Saved Messages',
+                          'Featured Sermons',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -373,19 +513,41 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Column(
                           children: _allMessages.map((m) {
                             return Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.only(bottom: 12),
                               child: _SermonRow(
                                 sermon: m,
                                 cardBg: cardBg,
                                 borderColor: borderColor,
                                 textColor: textColor,
                                 subColor: subColor,
+                                onSave: () {
+                                  final already = savedSermonsNotifier.value
+                                      .any((s) => s.title == m.title);
+                                  if (!already) {
+                                    savedSermonsNotifier.value = [
+                                      ...savedSermonsNotifier.value,
+                                      SavedSermon(
+                                        title: m.title,
+                                        pastor: m.pastor,
+                                        date: m.date,
+                                        duration: m.duration,
+                                        category: m.category,
+                                      ),
+                                    ];
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Sermon saved!'),
+                                        backgroundColor: AppColors.primary,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
                               ),
                             );
                           }).toList(),
@@ -415,12 +577,116 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
   }
 }
 
+class _SavedSermonRow extends StatelessWidget {
+  final SavedSermon sermon;
+  final Color cardBg;
+  final Color borderColor;
+  final Color textColor;
+  final Color subColor;
+
+  const _SavedSermonRow({
+    required this.sermon,
+    required this.cardBg,
+    required this.borderColor,
+    required this.textColor,
+    required this.subColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 88,
+              height: 88,
+              color: AppColors.primary.withOpacity(0.12),
+              child: Center(
+                child: Icon(Icons.play_circle_filled,
+                    color: AppColors.primary.withOpacity(0.5), size: 32),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(sermon.title,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        height: 1.3)),
+                const SizedBox(height: 4),
+                Text(sermon.pastor,
+                    style: TextStyle(fontSize: 11, color: subColor)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(sermon.category,
+                          style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary)),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.schedule, color: subColor, size: 11),
+                    const SizedBox(width: 3),
+                    Text(sermon.duration,
+                        style: TextStyle(fontSize: 10, color: subColor)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              savedSermonsNotifier.value = savedSermonsNotifier.value
+                  .where((s) => s.title != sermon.title)
+                  .toList();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: const Icon(Icons.bookmark,
+                  color: AppColors.primary, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SermonRow extends StatelessWidget {
   final _SavedSermon sermon;
   final Color cardBg;
   final Color borderColor;
   final Color textColor;
   final Color subColor;
+  final VoidCallback? onSave;
 
   const _SermonRow({
     required this.sermon,
@@ -428,6 +694,7 @@ class _SermonRow extends StatelessWidget {
     required this.borderColor,
     required this.textColor,
     required this.subColor,
+    this.onSave,
   });
 
   @override
@@ -489,31 +756,35 @@ class _SermonRow extends StatelessWidget {
                   sermon.pastor,
                   style: TextStyle(fontSize: 11, color: subColor),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today,
-                        color: subColor, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      sermon.date,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: subColor,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        sermon.category,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Icon(Icons.schedule, color: subColor, size: 12),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 8),
+                    Icon(Icons.schedule, color: subColor, size: 11),
+                    const SizedBox(width: 3),
                     Text(
                       sermon.duration,
                       style: TextStyle(
                         fontSize: 10,
                         color: subColor,
                         fontWeight: FontWeight.w500,
-                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -521,6 +792,24 @@ class _SermonRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onSave != null)
+            GestureDetector(
+              onTap: onSave,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: ValueListenableBuilder<List<SavedSermon>>(
+                  valueListenable: savedSermonsNotifier,
+                  builder: (context, saved, _) {
+                    final isSaved = saved.any((s) => s.title == sermon.title);
+                    return Icon(
+                      isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      color: AppColors.primary,
+                      size: 20,
+                    );
+                  },
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -560,15 +849,15 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.group,
               label: 'Groups',
               active: false,
-              onTap: () {}),
+              onTap: onHome),
           const SizedBox(width: 56),
           _NavItem(
               icon: Icons.volunteer_activism,
               label: 'Pray',
               active: false,
-              onTap: () {}),
+              onTap: onHome),
           _NavItem(
-              icon: Icons.person, label: 'Profile', active: false, onTap: () {}),
+              icon: Icons.person, label: 'Profile', active: false, onTap: onHome),
         ],
       ),
     );
@@ -644,6 +933,7 @@ class _SavedSermon {
   final String pastor;
   final String date;
   final String duration;
+  final String category;
   final Color gradientStart;
   final Color gradientEnd;
 
@@ -652,6 +942,7 @@ class _SavedSermon {
     required this.pastor,
     required this.date,
     required this.duration,
+    required this.category,
     required this.gradientStart,
     required this.gradientEnd,
   });

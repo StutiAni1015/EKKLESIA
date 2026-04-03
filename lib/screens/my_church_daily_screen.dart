@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
 import '../core/app_colors.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'join_a_church_screen.dart';
@@ -7,6 +8,8 @@ import 'bible_books_index_screen.dart';
 import 'prayer_community_feed_screen.dart';
 import 'prayer_heartbeat_screen.dart';
 import 'church_events_list_screen.dart';
+import 'member_notification_alert_screen.dart';
+import 'member_facial_scan_screen.dart';
 
 // Dusty rose is the accent for this community screen
 const _rose = Color(0xFFD7A49A);
@@ -46,7 +49,7 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabGroups),
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
       floatingActionButton: buildCenterFab(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
@@ -77,17 +80,25 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                               color: textColor,
                             ),
                           ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE2E8F0),
-                              shape: BoxShape.circle,
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) =>
+                                      const MemberNotificationAlertScreen()),
                             ),
-                            child: Icon(Icons.notifications,
-                                color: textColor, size: 22),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? const Color(0xFF334155)
+                                    : const Color(0xFFE2E8F0),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(Icons.notifications,
+                                  color: textColor, size: 22),
+                            ),
                           ),
                         ],
                       ),
@@ -139,6 +150,74 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                           MediaQuery.of(context).padding.bottom + 90,
                     ),
                     children: [
+                      // Verify Identity banner
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const MemberFacialScanScreen()),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E293B)
+                                  : const Color(0xFFEBF0F3),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFB6C9BB)
+                                        .withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.face_retouching_natural,
+                                    color: Color(0xFFB6C9BB),
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Verify Your Membership',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      Text(
+                                        'Complete facial scan to confirm identity',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: isDark
+                                              ? const Color(0xFF94A3B8)
+                                              : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right,
+                                    color: Color(0xFFCBD5E1), size: 18),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                       // Daily Blessing
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
@@ -397,7 +476,7 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
-                        height: 160,
+                        height: 190,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           padding:
@@ -427,6 +506,14 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                             final icons = [
                               Icons.people_alt,
                               Icons.church
+                            ];
+                            // Compute next occurrence dates
+                            final now = DateTime.now();
+                            final daysUntilFriday = (5 - now.weekday + 7) % 7;
+                            final daysUntilSunday = (7 - now.weekday + 7) % 7 == 0 ? 7 : (7 - now.weekday + 7) % 7;
+                            final eventDates = [
+                              DateTime(now.year, now.month, now.day + (daysUntilFriday == 0 ? 7 : daysUntilFriday), 19, 0),
+                              DateTime(now.year, now.month, now.day + daysUntilSunday, 9, 0),
                             ];
                             return ClipRRect(
                               borderRadius:
@@ -466,14 +553,13 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                                             colors: [
                                               Colors.transparent,
                                               Colors.black
-                                                  .withOpacity(0.5),
+                                                  .withOpacity(0.6),
                                             ],
                                           ),
                                         ),
                                         child: Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment
-                                                  .start,
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               times[i],
@@ -493,6 +579,56 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                                                 fontWeight:
                                                     FontWeight.bold,
                                                 color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            GestureDetector(
+                                              onTap: () {
+                                                final event = Event(
+                                                  title: titles[i],
+                                                  description:
+                                                      'Grace Global Church — ${times[i]}',
+                                                  startDate: eventDates[i],
+                                                  endDate: eventDates[i]
+                                                      .add(const Duration(hours: 2)),
+                                                  allDay: false,
+                                                );
+                                                Add2Calendar.addEvent2Cal(event);
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 5),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.18),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: Colors.white
+                                                        .withOpacity(0.35),
+                                                  ),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                        Icons.calendar_today,
+                                                        color: Colors.white,
+                                                        size: 11),
+                                                    SizedBox(width: 5),
+                                                    Text(
+                                                      'Add to Calendar',
+                                                      style: TextStyle(
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -907,7 +1043,12 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                                         ),
                                       ),
                                       GestureDetector(
-                                        onTap: () {},
+                                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Lyrics coming soon!'),
+                                            behavior: SnackBarBehavior.floating,
+                                          ),
+                                        ),
                                         child: Row(
                                           children: [
                                             Text(
@@ -1013,22 +1154,7 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
               ],
             ),
 
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                bottomPadding: MediaQuery.of(context).padding.bottom,
-                onHome: () => Navigator.maybePop(context),
-                onJoinChurch: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const JoinAChurchScreen()),
-                ),
-              ),
-            ),
+            // Bottom nav is handled by AppBottomBar in Scaffold.bottomNavigationBar
           ],
         ),
       ),
@@ -1349,7 +1475,7 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.group,
               label: 'Community',
               active: true,
-              onTap: () {}),
+              onTap: onHome),
           // Center elevated FAB
           GestureDetector(
             onTap: () => Navigator.push(
@@ -1406,7 +1532,7 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.person,
               label: 'Profile',
               active: false,
-              onTap: () {}),
+              onTap: onHome),
         ],
       ),
     );

@@ -83,10 +83,20 @@ class _SermonPlayerScreenState extends State<SermonPlayerScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert,
-                        color: AppColors.primary),
-                    onPressed: () {},
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert, color: AppColors.primary),
+                    onSelected: (v) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('$v coming soon!'),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'Report', child: Text('Report')),
+                      PopupMenuItem(value: 'Copy link', child: Text('Copy link')),
+                      PopupMenuItem(value: 'Add to playlist', child: Text('Add to playlist')),
+                    ],
                   ),
                 ],
               ),
@@ -341,7 +351,13 @@ class _SermonPlayerScreenState extends State<SermonPlayerScreen> {
                           _QuickAction(
                             icon: Icons.share_outlined,
                             label: 'Share',
-                            onTap: () {},
+                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Share coming soon!'),
+                                backgroundColor: AppColors.primary,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            ),
                           ),
                           _QuickAction(
                             icon: _saved
@@ -416,7 +432,7 @@ class _SermonPlayerScreenState extends State<SermonPlayerScreen> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () => Navigator.maybePop(context),
                             child: const Text(
                               'View All',
                               style: TextStyle(

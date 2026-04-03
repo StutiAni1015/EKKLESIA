@@ -3,9 +3,16 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'member_verification_successful_screen.dart';
 import 'church_member_verification_screen.dart';
+import 'otp_verification_screen.dart';
+import '../core/user_session.dart';
 
 class MemberFacialScanScreen extends StatefulWidget {
-  const MemberFacialScanScreen({super.key});
+  /// When provided, called after a successful scan instead of the default
+  /// navigation to MemberVerificationSuccessfulScreen. Use this to plug the
+  /// scan into a signup / onboarding flow.
+  final VoidCallback? onSuccess;
+
+  const MemberFacialScanScreen({super.key, this.onSuccess});
 
   @override
   State<MemberFacialScanScreen> createState() =>
@@ -32,11 +39,28 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
         final success = math.Random().nextDouble() > 0.25;
         if (!mounted) return;
         if (success) {
+          if (!mounted) return;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-                builder: (_) =>
-                    const MemberVerificationSuccessfulScreen()),
+              builder: (_) => OtpVerificationScreen(
+                title: 'Identity Verification',
+                verificationTarget: 'registered contact',
+                onVerified: () {
+                  faceVerifiedNotifier.value = true;
+                  if (widget.onSuccess != null) {
+                    widget.onSuccess!();
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              const MemberVerificationSuccessfulScreen()),
+                    );
+                  }
+                },
+              ),
+            ),
           );
         } else {
           _showRetrySheet();

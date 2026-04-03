@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'church_member_list_screen.dart';
 import 'church_events_list_screen.dart';
-import 'treasury_details_screen.dart';
+import 'treasury_lock_screen.dart';
 
 class ChurchProfileDetailsScreen extends StatefulWidget {
   final String churchName;
@@ -685,7 +685,7 @@ class _ChurchProfileDetailsScreenState
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const TreasuryDetailsScreen()),
+                            builder: (_) => const TreasuryLockScreen()),
                       ),
                       child: Container(
                         height: 48,

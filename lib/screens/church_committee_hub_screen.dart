@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
-import 'treasury_details_screen.dart';
+import 'treasury_lock_screen.dart';
+import '../core/user_session.dart';
 import 'create_poll_screen.dart';
 import 'poll_results_screen.dart';
 import 'update_treasury_account_screen.dart';
@@ -88,6 +89,12 @@ class _ChurchCommitteeHubScreenState
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Row(
                 children: [
+                  GestureDetector(
+                    onTap: () => Navigator.maybePop(context),
+                    child: const Icon(Icons.arrow_back,
+                        color: AppColors.primary, size: 24),
+                  ),
+                  const SizedBox(width: 10),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -123,7 +130,7 @@ class _ChurchCommitteeHubScreenState
                       IconButton(
                         icon: Icon(Icons.notifications_outlined,
                             color: textColor),
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Committee notifications coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                       ),
                       Positioned(
                         right: 10,
@@ -158,141 +165,189 @@ class _ChurchCommitteeHubScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Treasury summary
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) =>
-                                const TreasuryDetailsScreen()),
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF1E293B),
-                              Color(0xFF0F172A)
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                    // Treasury summary — locked unless a valid session exists
+                    ValueListenableBuilder<TreasuryAccessSession?>(
+                      valueListenable: treasuryAccessNotifier,
+                      builder: (context, session, _) {
+                        final unlocked =
+                            session != null && !session.isExpired;
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const TreasuryLockScreen()),
                           ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 16,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                    Icons.account_balance_wallet,
-                                    color: AppColors.primary,
-                                    size: 18),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Treasury Overview',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'View Details',
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const Icon(Icons.chevron_right,
-                                        color: AppColors.primary,
-                                        size: 16),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              '\$42,850.12',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w800,
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFF1E293B),
+                                  Color(0xFF0F172A),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Row(
-                              children: [
-                                Icon(Icons.trending_up,
-                                    size: 13,
-                                    color: Color(0xFF22C55E)),
-                                SizedBox(width: 4),
-                                Text(
-                                  '+\$3,240 this month',
-                                  style: TextStyle(
-                                    color: Color(0xFF22C55E),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                _TxChip(
-                                  label: 'Income',
-                                  value: '\$8,340',
-                                  color: const Color(0xFF22C55E),
-                                ),
-                                const SizedBox(width: 8),
-                                _TxChip(
-                                  label: 'Expenses',
-                                  value: '\$1,582',
-                                  color: const Color(0xFFEF4444),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const UpdateTreasuryAccountScreen()),
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      '+ Log',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                            child: unlocked
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                              Icons.account_balance_wallet,
+                                              color: AppColors.primary,
+                                              size: 18),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Treasury Overview',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          const Text(
+                                            'View Details',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const Icon(Icons.chevron_right,
+                                              color: AppColors.primary,
+                                              size: 16),
+                                        ],
                                       ),
-                                    ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        '\$42,850.12',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      const Row(
+                                        children: [
+                                          Icon(Icons.trending_up,
+                                              size: 13,
+                                              color: Color(0xFF22C55E)),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            '+\$3,240 this month',
+                                            style: TextStyle(
+                                              color: Color(0xFF22C55E),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Row(
+                                        children: [
+                                          _TxChip(
+                                            label: 'Income',
+                                            value: '\$8,340',
+                                            color: const Color(0xFF22C55E),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          _TxChip(
+                                            label: 'Expenses',
+                                            value: '\$1,582',
+                                            color: const Color(0xFFEF4444),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  )
+                                : Column(
+                                    children: [
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.lock_rounded,
+                                              color: Color(0xFFEF4444),
+                                              size: 18),
+                                          const SizedBox(width: 8),
+                                          const Text(
+                                            'Treasury — Locked',
+                                            style: TextStyle(
+                                              color: Colors.white70,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const Spacer(),
+                                          const Text(
+                                            'Enter Code',
+                                            style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const Icon(Icons.chevron_right,
+                                              color: AppColors.primary,
+                                              size: 16),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 14),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              Colors.white.withOpacity(0.05),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color:
+                                                Colors.white.withOpacity(0.1),
+                                          ),
+                                        ),
+                                        child: const Column(
+                                          children: [
+                                            Text('••••••••',
+                                                style: TextStyle(
+                                                  color: Colors.white38,
+                                                  fontSize: 28,
+                                                  fontWeight: FontWeight.w800,
+                                                  letterSpacing: 8,
+                                                )),
+                                            SizedBox(height: 6),
+                                            Text(
+                                              'Requires access code from pastor\nor treasurer to view',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Colors.white38,
+                                                fontSize: 11,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -348,7 +403,7 @@ class _ChurchCommitteeHubScreenState
                           cardBg: cardBg,
                           borderColor: borderColor,
                           textColor: textColor,
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Announce feature coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                         ),
                         const SizedBox(width: 10),
                         _QuickAction(
@@ -359,7 +414,7 @@ class _ChurchCommitteeHubScreenState
                           cardBg: cardBg,
                           borderColor: borderColor,
                           textColor: textColor,
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Meeting minutes coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                         ),
                       ],
                     ),
@@ -630,7 +685,7 @@ class _ChurchCommitteeHubScreenState
                         context,
                         MaterialPageRoute(
                             builder: (_) =>
-                                const TreasuryDetailsScreen()),
+                                const TreasuryLockScreen()),
                       );
                     }),
                 Transform.translate(

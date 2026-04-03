@@ -3,9 +3,15 @@ import 'dart:math' as math;
 import '../core/app_colors.dart';
 import 'verification_successful_screen.dart';
 import 'scan_failure_screen.dart';
+import 'otp_verification_screen.dart';
+import '../core/user_session.dart';
 
 class PastorFacialScanScreen extends StatefulWidget {
-  const PastorFacialScanScreen({super.key});
+  /// When provided, called after a successful scan instead of the default
+  /// navigation. Use this to plug the scan into a signup / onboarding flow.
+  final VoidCallback? onSuccess;
+
+  const PastorFacialScanScreen({super.key, this.onSuccess});
 
   @override
   State<PastorFacialScanScreen> createState() =>
@@ -47,12 +53,33 @@ class _PastorFacialScanScreenState extends State<PastorFacialScanScreen>
       if (!mounted) return;
       // Simulate 70% success rate
       final success = DateTime.now().millisecond % 10 < 7;
+      if (!success) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ScanFailureScreen()),
+        );
+        return;
+      }
+      // Success → OTP verification step
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => success
-              ? const VerificationSuccessfulScreen()
-              : const ScanFailureScreen(),
+          builder: (_) => OtpVerificationScreen(
+            title: 'Identity Verification',
+            verificationTarget: 'registered contact',
+            onVerified: () {
+              faceVerifiedNotifier.value = true;
+              if (widget.onSuccess != null) {
+                widget.onSuccess!();
+              } else {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const VerificationSuccessfulScreen()),
+                );
+              }
+            },
+          ),
         ),
       );
     });

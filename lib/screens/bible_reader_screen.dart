@@ -137,7 +137,13 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                             IconButton(
                               icon: Icon(Icons.settings_outlined,
                                   color: textColor, size: 22),
-                              onPressed: () {},
+                              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Reading settings coming soon!'),
+                                  backgroundColor: AppColors.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -313,7 +319,13 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                   // Share
                   _FloatBtn(
                     icon: Icons.share,
-                    onTap: () {},
+                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Share coming soon!'),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    ),
                     isDark: isDark,
                     isPrimary: true,
                   ),

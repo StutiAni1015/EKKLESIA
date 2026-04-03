@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'signup_community_preferences_screen.dart';
+import 'member_facial_scan_screen.dart';
+import 'pastor_facial_scan_screen.dart';
 
 class SignupFaithBackgroundScreen extends StatefulWidget {
   const SignupFaithBackgroundScreen({super.key});
@@ -53,11 +55,24 @@ class _SignupFaithBackgroundScreenState
     super.dispose();
   }
 
+  void _goToNextStep() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+          builder: (_) => const SignupCommunityPreferencesScreen()),
+      (route) => route.isFirst,
+    );
+  }
+
   void _onContinue() {
+    // Route to the appropriate facial scan based on role, then continue signup
+    final isPastor = _role == 'Pastor';
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const SignupCommunityPreferencesScreen(),
+        builder: (_) => isPastor
+            ? PastorFacialScanScreen(onSuccess: _goToNextStep)
+            : MemberFacialScanScreen(onSuccess: _goToNextStep),
       ),
     );
   }

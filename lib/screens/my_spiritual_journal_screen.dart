@@ -134,7 +134,13 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
                               child: IconButton(
                                 icon: const Icon(Icons.search,
                                     color: AppColors.primary, size: 20),
-                                onPressed: () {},
+                                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Search journals coming soon!'),
+                                    backgroundColor: AppColors.primary,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                ),
                                 padding: EdgeInsets.zero,
                               ),
                             ),
@@ -624,7 +630,7 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.group,
               label: 'Community',
               active: false,
-              onTap: () {}),
+              onTap: () => Navigator.maybePop(context)),
           const SizedBox(width: 56),
           _NavItem(
               icon: Icons.edit_note,
@@ -635,7 +641,7 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.person,
               label: 'Profile',
               active: false,
-              onTap: () {}),
+              onTap: () => Navigator.maybePop(context)),
         ],
       ),
     );

@@ -188,7 +188,7 @@ class _ContentModerationScreenState extends State<ContentModerationScreen> {
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Content filters coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                         child: Row(
                           children: [
                             Icon(Icons.filter_list,

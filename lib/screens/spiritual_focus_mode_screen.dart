@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import 'prayer_focus_active_screen.dart';
 
 class SpiritualFocusModeScreen extends StatefulWidget {
   const SpiritualFocusModeScreen({super.key});
@@ -43,12 +44,12 @@ class _SpiritualFocusModeScreenState extends State<SpiritualFocusModeScreen>
 
   void _startFocus() {
     final d = _durations[_selectedIndex];
-    final label = d.unit == 'Hour' ? '${d.value} hour' : '${d.value} minutes';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Spiritual Focus Mode started for $label.'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
+    final totalMinutes = d.unit == 'Hour' ? d.value * 60 : d.value;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            PrayerFocusActiveScreen(totalMinutes: totalMinutes),
       ),
     );
   }

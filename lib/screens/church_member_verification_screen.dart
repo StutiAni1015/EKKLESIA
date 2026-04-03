@@ -26,7 +26,7 @@ class _ChurchMemberVerificationScreenState
     'National ID',
     'Passport',
     "Driver's License",
-    'Voter's Card',
+    "Voter's Card",
   ];
 
   @override
@@ -337,7 +337,7 @@ class _ChurchMemberVerificationScreenState
                           icon: Icon(Icons.keyboard_arrow_down,
                               color: subColor),
                           items: _idTypes
-                              .map((t) => DropdownMenuItem(
+                              .map((t) => DropdownMenuItem<String>(
                                   value: t,
                                   child: Row(
                                     children: [
@@ -348,7 +348,7 @@ class _ChurchMemberVerificationScreenState
                                     ],
                                   )))
                               .toList(),
-                          onChanged: (v) {
+                          onChanged: (String? v) {
                             if (v != null) setState(() => _idType = v);
                           },
                         ),

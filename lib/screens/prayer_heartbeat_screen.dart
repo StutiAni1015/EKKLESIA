@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../widgets/app_bottom_bar.dart';
+import 'add_prayer_request_screen.dart';
 
 class PrayerHeartbeatScreen extends StatefulWidget {
   const PrayerHeartbeatScreen({super.key});
@@ -395,7 +396,11 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
                       ),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const AddPrayerRequestScreen()),
+                        ),
                         child: Text(
                           '+ Add Yours',
                           style: TextStyle(
@@ -600,7 +605,7 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 GestureDetector(
-                                  onTap: () {},
+                                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Response feature coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 12, vertical: 7),
@@ -644,7 +649,7 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
         ),
       ),
 
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabPray),
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
       floatingActionButton: buildCenterFab(context),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );

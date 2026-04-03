@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
 import 'update_treasury_account_screen.dart';
 import 'treasury_monthly_report_screen.dart';
 
@@ -15,6 +17,43 @@ class _TreasuryDetailsScreenState
     extends State<TreasuryDetailsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
+
+  // Session expiry countdown
+  Timer? _sessionTimer;
+  Duration _remaining = Duration.zero;
+
+  void _startSessionTimer() {
+    _sessionTimer?.cancel();
+    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      final session = treasuryAccessNotifier.value;
+      if (session == null || session.isExpired) {
+        _sessionTimer?.cancel();
+        treasuryAccessNotifier.value = null;
+        // Auto-pop with expired message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.lock_rounded, color: Colors.white, size: 16),
+                  SizedBox(width: 8),
+                  Text('Treasury access expired — session locked.'),
+                ],
+              ),
+              backgroundColor: const Color(0xFFEF4444),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+          );
+          Navigator.maybePop(context);
+        }
+      } else {
+        setState(() => _remaining = session.remaining);
+      }
+    });
+  }
 
   static const sage = Color(0xFFB6C9BB);
   static const babyBlue = Color(0xFFB9CFDF);
@@ -84,11 +123,18 @@ class _TreasuryDetailsScreenState
   void initState() {
     super.initState();
     _tabs = TabController(length: 2, vsync: this);
+    // Initialise remaining from current session
+    final session = treasuryAccessNotifier.value;
+    if (session != null && !session.isExpired) {
+      _remaining = session.remaining;
+    }
+    _startSessionTimer();
   }
 
   @override
   void dispose() {
     _tabs.dispose();
+    _sessionTimer?.cancel();
     super.dispose();
   }
 
@@ -159,6 +205,10 @@ class _TreasuryDetailsScreenState
               ),
             ),
             Divider(height: 1, color: borderColor),
+
+            // Session countdown banner
+            if (_remaining > Duration.zero)
+              _SessionBanner(remaining: _remaining),
 
             Expanded(
               child: SingleChildScrollView(
@@ -561,6 +611,66 @@ class _Tx {
     required this.isCredit,
     required this.note,
   });
+}
+
+class _SessionBanner extends StatelessWidget {
+  final Duration remaining;
+  const _SessionBanner({required this.remaining});
+
+  String get _label {
+    final m = remaining.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = remaining.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isWarning = remaining.inSeconds < 120;
+    final bg = isWarning ? const Color(0xFFFEF3C7) : const Color(0xFFECFDF5);
+    final fg = isWarning ? const Color(0xFF92400E) : const Color(0xFF065F46);
+    final icon = isWarning ? Icons.warning_amber_rounded : Icons.timer_outlined;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: bg,
+      child: Row(
+        children: [
+          Icon(icon, color: fg, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isWarning
+                  ? 'Treasury access expires in $_label — save your work!'
+                  : 'Temporary access active · expires in $_label',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: fg.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              _label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+                color: fg,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _Budget {

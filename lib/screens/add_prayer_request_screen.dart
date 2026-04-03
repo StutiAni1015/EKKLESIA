@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
 
 class AddPrayerRequestScreen extends StatefulWidget {
   const AddPrayerRequestScreen({super.key});
@@ -21,19 +22,69 @@ class _AddPrayerRequestScreenState extends State<AddPrayerRequestScreen> {
   }
 
   void _submit() {
-    if (_bodyCtrl.text.trim().isEmpty) return;
+    final text = _bodyCtrl.text.trim();
+    if (text.isEmpty) return;
+
+    // ── Word filter ───────────────────────────────────────────────
+    final banned = firstBannedWord(text);
+    if (banned != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '⚠️ Your post contains inappropriate language and cannot be submitted. Please revise your message.',
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
+
+      // Add to personal prayer list
+      final prayer = UserPrayer(
+        body: text,
+        isAnonymous: _isAnonymous,
+        addedAt: DateTime.now(),
+      );
+      myPrayerRequestsNotifier.value = [
+        ...myPrayerRequestsNotifier.value,
+        prayer,
+      ];
+
+      // Also submit to church feed for pastor approval (if a church exists)
+      if (myChurchNotifier.value != null) {
+        final name = _isAnonymous ? 'Anonymous' : (userNameNotifier.value.trim().isEmpty ? 'Member' : userNameNotifier.value.trim());
+        final initials = _isAnonymous ? 'AN' : name.split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
+        final post = ChurchPost(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          authorName: name,
+          authorInitials: initials,
+          authorColor: const Color(0xFFB9D1EA),
+          content: text,
+          postedAt: DateTime.now(),
+          status: PostStatus.pending,
+        );
+        churchPostsNotifier.value = [...churchPostsNotifier.value, post];
+      }
+
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Prayer request posted to the community.'),
+        SnackBar(
+          content: Text(
+            myChurchNotifier.value != null
+                ? 'Your post is pending pastor approval.'
+                : 'Prayer request posted to the community.',
+          ),
           backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );
-      Navigator.maybePop(context);
+      Navigator.maybePop(context, prayer);
     });
   }
 
@@ -66,7 +117,7 @@ class _AddPrayerRequestScreenState extends State<AddPrayerRequestScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.close, color: textColor),
+                    icon: Icon(Icons.arrow_back, color: textColor),
                     onPressed: () => Navigator.maybePop(context),
                   ),
                   Expanded(

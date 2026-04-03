@@ -115,7 +115,7 @@ class _ChurchProfileViewScreenState
                         top: 12,
                         right: 12,
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Share church coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(

@@ -1212,7 +1212,7 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.group,
               label: 'Community',
               active: true,
-              onTap: () {}),
+              onTap: onHome),
           // Center elevated FAB
           Column(
             mainAxisSize: MainAxisSize.min,
@@ -1250,12 +1250,12 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.volunteer_activism_outlined,
               label: 'Prayer',
               active: false,
-              onTap: () {}),
+              onTap: onHome),
           _NavItem(
               icon: Icons.person,
               label: 'Profile',
               active: false,
-              onTap: () {}),
+              onTap: onHome),
         ],
       ),
     );

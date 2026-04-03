@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
 import '../core/app_colors.dart';
 
 class ChurchEventsListScreen extends StatefulWidget {
@@ -390,32 +391,82 @@ class _ChurchEventsListScreenState
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 40,
-                                  child: ElevatedButton(
-                                    onPressed: () => setState(() =>
-                                        _registered.add(i)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: registered
-                                          ? const Color(0xFF22C55E)
-                                          : AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(
-                                                  10)),
-                                      elevation: 0,
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 40,
+                                        child: ElevatedButton(
+                                          onPressed: () => setState(
+                                              () => _registered.add(i)),
+                                          style:
+                                              ElevatedButton.styleFrom(
+                                            backgroundColor: registered
+                                                ? const Color(0xFF22C55E)
+                                                : AppColors.primary,
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        10)),
+                                            elevation: 0,
+                                          ),
+                                          child: Text(
+                                            registered
+                                                ? '✓ Registered'
+                                                : 'Register Now',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 13),
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                    child: Text(
-                                      registered
-                                          ? '✓ Registered'
-                                          : 'Register Now',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13),
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      height: 40,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          final now = DateTime.now();
+                                          final event = Event(
+                                            title: e.title,
+                                            description:
+                                                '${e.location} · ${e.time}',
+                                            startDate: now.add(
+                                                const Duration(days: 3)),
+                                            endDate: now.add(
+                                                const Duration(
+                                                    days: 3, hours: 2)),
+                                            location: e.location,
+                                            allDay: false,
+                                          );
+                                          Add2Calendar.addEvent2Cal(event);
+                                        },
+                                        icon: const Icon(
+                                            Icons.calendar_today,
+                                            size: 13),
+                                        label: const Text('Calendar',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight:
+                                                    FontWeight.w600)),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor:
+                                              AppColors.primary,
+                                          side: BorderSide(
+                                              color: AppColors.primary
+                                                  .withOpacity(0.5)),
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                      10)),
+                                          padding:
+                                              const EdgeInsets.symmetric(
+                                                  horizontal: 10),
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
                               ],
                             ),

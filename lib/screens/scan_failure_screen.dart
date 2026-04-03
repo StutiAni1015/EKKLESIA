@@ -321,7 +321,7 @@ class _ScanFailureScreenState extends State<ScanFailureScreen>
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Support chat coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isDark
                               ? const Color(0xFF334155)

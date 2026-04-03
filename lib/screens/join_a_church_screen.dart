@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'church_creation_basic_info_screen.dart';
+import 'church_join_application_screen.dart';
 
 class JoinAChurchScreen extends StatefulWidget {
   const JoinAChurchScreen({super.key});
@@ -256,6 +257,87 @@ class _JoinAChurchScreenState extends State<JoinAChurchScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Nearby churches heading
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Nearby Churches',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                        Text(
+                          '3 found',
+                          style: TextStyle(fontSize: 13, color: subColor),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Church cards
+                    ...[
+                      _ChurchResult(
+                        name: 'Grace Community Church',
+                        location: 'Austin, TX',
+                        denomination: 'Non-denominational',
+                        members: '1,200+',
+                        distance: '0.8 mi',
+                      ),
+                      _ChurchResult(
+                        name: 'Calvary Baptist Church',
+                        location: 'Austin, TX',
+                        denomination: 'Baptist',
+                        members: '450',
+                        distance: '1.4 mi',
+                      ),
+                      _ChurchResult(
+                        name: 'Hope Fellowship',
+                        location: 'Austin, TX',
+                        denomination: 'Pentecostal',
+                        members: '820',
+                        distance: '2.1 mi',
+                      ),
+                    ].map(
+                      (c) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ChurchCard(
+                          church: c,
+                          cardBg: cardBg,
+                          borderColor: borderColor,
+                          subColor: subColor,
+                          textColor: textColor,
+                          onJoin: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChurchJoinApplicationScreen(
+                                churchName: c.name,
+                                churchLocation: c.location,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Divider before map
+                    Divider(
+                        color:
+                            isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Map View',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
                     // Map placeholder
                     Container(
                       height: 180,
@@ -378,6 +460,167 @@ class _JoinAChurchScreenState extends State<JoinAChurchScreen> {
     );
   }
 }
+
+// ── Church result data ─────────────────────────────────────────────────────
+
+class _ChurchResult {
+  final String name;
+  final String location;
+  final String denomination;
+  final String members;
+  final String distance;
+
+  const _ChurchResult({
+    required this.name,
+    required this.location,
+    required this.denomination,
+    required this.members,
+    required this.distance,
+  });
+}
+
+// ── Church card widget ─────────────────────────────────────────────────────
+
+class _ChurchCard extends StatelessWidget {
+  final _ChurchResult church;
+  final Color cardBg;
+  final Color borderColor;
+  final Color subColor;
+  final Color textColor;
+  final VoidCallback onJoin;
+
+  const _ChurchCard({
+    required this.church,
+    required this.cardBg,
+    required this.borderColor,
+    required this.subColor,
+    required this.textColor,
+    required this.onJoin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Church icon avatar
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+              ),
+            ),
+            child: const Icon(Icons.church, color: Colors.white, size: 26),
+          ),
+          const SizedBox(width: 12),
+
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  church.name,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${church.location} · ${church.denomination}',
+                  style: TextStyle(fontSize: 12, color: subColor),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    _Chip(
+                      icon: Icons.people_outline,
+                      label: church.members,
+                      subColor: subColor,
+                    ),
+                    const SizedBox(width: 10),
+                    _Chip(
+                      icon: Icons.near_me_outlined,
+                      label: church.distance,
+                      subColor: subColor,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Join button
+          ElevatedButton(
+            onPressed: onJoin,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              elevation: 2,
+            ),
+            child: const Text(
+              'Join',
+              style:
+                  TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color subColor;
+
+  const _Chip(
+      {required this.icon, required this.label, required this.subColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: subColor),
+        const SizedBox(width: 3),
+        Text(label,
+            style: TextStyle(fontSize: 11, color: subColor)),
+      ],
+    );
+  }
+}
+
+// ── Map pin ────────────────────────────────────────────────────────────────
 
 class _MapPin extends StatelessWidget {
   final bool isDark;

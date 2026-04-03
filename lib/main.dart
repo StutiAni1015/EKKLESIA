@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_colors.dart';
 import 'core/app_localizations.dart';
-import 'screens/language_selection_screen.dart';
+import 'screens/welcome_screen.dart';
 
 void main() {
   runApp(const EkklesiaApp());
@@ -53,6 +53,13 @@ class EkklesiaApp extends StatelessWidget {
               scaffoldBackgroundColor: AppColors.ivory,
               fontFamily: 'sans-serif',
               useMaterial3: true,
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+              splashFactory: InkRipple.splashFactory,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -62,8 +69,18 @@ class EkklesiaApp extends StatelessWidget {
               scaffoldBackgroundColor: AppColors.backgroundDark,
               fontFamily: 'sans-serif',
               useMaterial3: true,
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                  TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+              splashFactory: InkRipple.splashFactory,
             ),
-            home: const LanguageSelectionScreen(),
+            home: const WelcomeScreen(
+              languageCode: 'en',
+              languageNativeName: 'English',
+            ),
           ),
         );
       },

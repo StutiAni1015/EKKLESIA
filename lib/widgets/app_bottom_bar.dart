@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/my_church_daily_screen.dart';
-import '../screens/prayer_heartbeat_screen.dart';
-import '../screens/spiritual_focus_mode_screen.dart';
+import '../screens/my_giving_dashboard_screen.dart';
+import '../screens/bible_books_index_screen.dart';
+import '../screens/user_profile_screen.dart';
 
-// The active tab index for each main screen.
+// Active tab index constants
 const kTabHome = 0;
-const kTabGroups = 1;
-const kTabPray = 3;
+const kTabCommunity = 1;
+const kTabBible = 2; // center FAB
+const kTabGivings = 3;
 const kTabProfile = 4;
 
 class AppBottomBar extends StatelessWidget {
   final int activeIndex;
 
   const AppBottomBar({super.key, required this.activeIndex});
-
-  static const _navBg = Color(0xFFFCF9F7);
 
   void _onTap(BuildContext context, int index) {
     if (index == activeIndex) return;
@@ -28,27 +28,25 @@ class AppBottomBar extends StatelessWidget {
           (route) => false,
         );
         break;
-      case kTabGroups:
+      case kTabCommunity:
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const MyChurchDailyScreen()),
           (route) => false,
         );
         break;
-      case kTabPray:
+      case kTabGivings:
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const PrayerHeartbeatScreen()),
+          MaterialPageRoute(builder: (_) => const MyGivingDashboardScreen()),
           (route) => false,
         );
         break;
       case kTabProfile:
-        // Profile screen placeholder
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile coming soon!'),
-            behavior: SnackBarBehavior.floating,
-          ),
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+          (route) => false,
         );
         break;
     }
@@ -62,11 +60,11 @@ class AppBottomBar extends StatelessWidget {
         : Colors.white.withOpacity(0.95);
 
     final items = <_NavItem?>[
-      const _NavItem(Icons.home, 'Home'),
-      const _NavItem(Icons.group, 'Groups'),
-      null, // center FAB
-      const _NavItem(Icons.volunteer_activism, 'Pray'),
-      const _NavItem(Icons.person, 'Profile'),
+      const _NavItem(Icons.home_rounded, 'Home'),
+      const _NavItem(Icons.people_rounded, 'Community'),
+      null, // center FAB (Bible)
+      const _NavItem(Icons.volunteer_activism_rounded, 'Givings'),
+      const _NavItem(Icons.person_rounded, 'Profile'),
     ];
 
     return BottomAppBar(
@@ -104,7 +102,7 @@ class AppBottomBar extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
+                            letterSpacing: 0.5,
                             color: activeIndex == i
                                 ? AppColors.primary
                                 : const Color(0xFFCBD5E1),
@@ -122,17 +120,29 @@ class AppBottomBar extends StatelessWidget {
 }
 
 FloatingActionButton buildCenterFab(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  const _navBg = Color(0xFFFCF9F7);
-
   return FloatingActionButton(
     onPressed: () => Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SpiritualFocusModeScreen()),
+      MaterialPageRoute(builder: (_) => const BibleBooksIndexScreen()),
     ),
     backgroundColor: AppColors.primary,
-    elevation: 0,
-    child: const Icon(Icons.auto_stories, color: Colors.white, size: 28),
+    elevation: 4,
+    child: const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
+        SizedBox(height: 2),
+        Text(
+          'Bible',
+          style: TextStyle(
+            fontSize: 8,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    ),
   );
 }
 

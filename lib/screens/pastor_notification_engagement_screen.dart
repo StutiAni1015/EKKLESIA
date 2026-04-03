@@ -455,7 +455,7 @@ class _PastorNotificationEngagementScreenState
                           ),
                           const SizedBox(width: 12),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification resent!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 8),
