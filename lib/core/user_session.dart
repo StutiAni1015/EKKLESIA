@@ -119,6 +119,33 @@ const _bannedWords = <String>[
   'murder',
 ];
 
+/// Temporary storage for the in-progress signup flow (cleared after account creation).
+final signupFullNameNotifier = ValueNotifier<String>('');
+final signupEmailNotifier    = ValueNotifier<String>('');
+
+/// In-progress church creation draft — shared across the 4-step creation flow.
+final churchDraftNotifier = ValueNotifier<ChurchDraft>(ChurchDraft());
+
+class ChurchDraft {
+  String name         = '';
+  String denomination = '';
+  String address      = '';
+  String city         = '';
+  String country      = '';
+  String phone        = '';
+  String email        = '';
+  String website      = '';
+  String youtube      = '';
+  String instagram    = '';
+  bool   allowTestimonies = true;
+
+  void clear() {
+    name = denomination = address = city = country = '';
+    phone = email = website = youtube = instagram = '';
+    allowTestimonies = true;
+  }
+}
+
 /// Profile picture state: null = no photo, emoji string = chosen emoji,
 /// otherwise = file path from gallery (not yet implemented).
 final userProfileEmojiNotifier = ValueNotifier<String?>('🙏');

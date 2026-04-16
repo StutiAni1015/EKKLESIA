@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../service/api_service.dart';
 import 'bible_books_index_screen.dart';
 import 'church_search_results_screen.dart';
 
@@ -14,75 +15,45 @@ class FindYourChurchScreen extends StatefulWidget {
 class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
-  int _navIndex = 3; // Church tab active
+  int _navIndex = 3;
   int? _joiningIndex;
 
+  List<Map<String, dynamic>> _churches = [];
+  bool _loading = true;
+  String? _error;
+
   static const ivory = Color(0xFFFDFBF7);
-  static const nude = Color(0xFFF4EAE0);
-  static const dustyRose = Color(0xFFD8A7B1);
   static const sage = Color(0xFFB6C9BB);
-  static const babyBlue = Color(0xFFB9CFDF);
 
-  static const _churches = [
-    _ChurchData(
-      name: 'Grace Community Church',
-      address: '123 Serene Way, Ivory City',
-      tagline: '"A place where everyone belongs."',
-      denomination: 'Non-denominational',
-      distance: '2.4 mi',
-      distanceBadgeColor: sage,
-      gradientColors: [Color(0xFFD7ECE4), Color(0xFFB6C9BB)],
-      iconColor: Color(0xFF4A7C59),
-      memberCount: '1,718 members',
-      services: 'Sun 9 AM & 11 AM',
-    ),
-    _ChurchData(
-      name: 'St. Peter\'s Cathedral',
-      address: '456 Heritage Square, Ivory City',
-      tagline: '"Rooted in tradition, growing in faith."',
-      denomination: 'Anglican',
-      distance: '3.8 mi',
-      distanceBadgeColor: babyBlue,
-      gradientColors: [Color(0xFFCEE0F0), Color(0xFFB9CFDF)],
-      iconColor: Color(0xFF2B6CB0),
-      memberCount: '3,240 members',
-      services: 'Sun 8 AM, 10 AM & 6 PM',
-    ),
-    _ChurchData(
-      name: 'The Well Springs',
-      address: '789 Oasis Lane, Ivory City',
-      tagline: '"Come as you are, leave refreshed."',
-      denomination: 'Pentecostal',
-      distance: '5.1 mi',
-      distanceBadgeColor: dustyRose,
-      gradientColors: [Color(0xFFEDD6DC), Color(0xFFD8A7B1)],
-      iconColor: Color(0xFF9B4D6A),
-      memberCount: '856 members',
-      services: 'Fri 7 PM & Sun 10 AM',
-    ),
-    _ChurchData(
-      name: 'New Life Baptist',
-      address: '12 Riverside Blvd, Ivory City',
-      tagline: '"Transformed by grace, living for purpose."',
-      denomination: 'Baptist',
-      distance: '6.3 mi',
-      distanceBadgeColor: Color(0xFFFDE68A),
-      gradientColors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
-      iconColor: Color(0xFFB45309),
-      memberCount: '2,105 members',
-      services: 'Sun 9:30 AM & 12 PM',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadChurches();
+  }
 
-  List<_ChurchData> get _filtered {
+  Future<void> _loadChurches() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final results = await ApiService.getChurches(query: _query);
+      if (!mounted) return;
+      setState(() {
+        _churches = results.cast<Map<String, dynamic>>();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  List<Map<String, dynamic>> get _filtered {
     if (_query.isEmpty) return _churches;
     final q = _query.toLowerCase();
-    return _churches
-        .where((c) =>
-            c.name.toLowerCase().contains(q) ||
-            c.address.toLowerCase().contains(q) ||
-            c.denomination.toLowerCase().contains(q))
-        .toList();
+    return _churches.where((c) =>
+      (c['name'] as String? ?? '').toLowerCase().contains(q) ||
+      (c['city'] as String? ?? '').toLowerCase().contains(q) ||
+      (c['denomination'] as String? ?? '').toLowerCase().contains(q)
+    ).toList();
   }
 
   @override
@@ -96,7 +67,7 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
     setState(() => _joiningIndex = null);
-    _showJoinedSheet(_filtered[index].name);
+    _showJoinedSheet(_filtered[index]['name'] as String? ?? 'this church');
   }
 
   void _showJoinedSheet(String churchName) {
@@ -285,6 +256,7 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
                           controller: _searchCtrl,
                           onChanged: (v) =>
                               setState(() => _query = v),
+                          onSubmitted: (_) => _loadChurches(),
                           style: TextStyle(
                               fontSize: 14, color: textColor),
                           decoration: InputDecoration(
@@ -349,7 +321,25 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
                 const SizedBox(height: 14),
 
                 // Church cards
-                if (_filtered.isEmpty)
+                if (_loading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 40),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Column(
+                      children: [
+                        Icon(Icons.wifi_off_outlined, size: 48, color: subColor),
+                        const SizedBox(height: 12),
+                        Text('Could not load churches', style: TextStyle(color: subColor, fontSize: 14)),
+                        const SizedBox(height: 8),
+                        TextButton(onPressed: _loadChurches, child: const Text('Retry')),
+                      ],
+                    ),
+                  )
+                else if (_filtered.isEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 40),
                     child: Column(
@@ -358,7 +348,10 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
                             size: 48, color: subColor),
                         const SizedBox(height: 12),
                         Text(
-                          'No churches found for "$_query"',
+                          _query.isEmpty
+                              ? 'No churches yet. Be the first to create one!'
+                              : 'No churches found for "$_query"',
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                               color: subColor, fontSize: 14),
                         ),
@@ -368,23 +361,31 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
                 else
                   ...List.generate(
                     _filtered.length,
-                    (i) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _ChurchCard(
-                        data: _filtered[i],
-                        isJoining: _joiningIndex == i,
-                        isDark: isDark,
-                        textColor: textColor,
-                        subColor: subColor,
-                        onJoin: () => _join(i),
-                        onViewProfile: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const ChurchSearchResultsScreen()),
+                    (i) {
+                      final c = _filtered[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _ChurchCard(
+                          name: c['name'] as String? ?? '',
+                          address: [c['address'], c['city'], c['country']]
+                              .where((s) => s != null && (s as String).isNotEmpty)
+                              .join(', '),
+                          denomination: c['denomination'] as String? ?? '',
+                          memberCount: '${(c['members'] as List?)?.length ?? 0} members',
+                          isJoining: _joiningIndex == i,
+                          isDark: isDark,
+                          textColor: textColor,
+                          subColor: subColor,
+                          onJoin: () => _join(i),
+                          onViewProfile: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const ChurchSearchResultsScreen()),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
               ],
             ),
@@ -493,7 +494,10 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
 // ── Church card ───────────────────────────────────────────────────────────────
 
 class _ChurchCard extends StatelessWidget {
-  final _ChurchData data;
+  final String name;
+  final String address;
+  final String denomination;
+  final String memberCount;
   final bool isJoining;
   final bool isDark;
   final Color textColor;
@@ -502,7 +506,10 @@ class _ChurchCard extends StatelessWidget {
   final VoidCallback onViewProfile;
 
   const _ChurchCard({
-    required this.data,
+    required this.name,
+    required this.address,
+    required this.denomination,
+    required this.memberCount,
     required this.isJoining,
     required this.isDark,
     required this.textColor,
@@ -534,65 +541,20 @@ class _ChurchCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gradient image placeholder
+          // Gradient banner
           Container(
             width: double.infinity,
             height: 150,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: data.gradientColors,
+                colors: [Color(0xFFD7ECE4), Color(0xFFB6C9BB)],
               ),
             ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.church,
-                    size: 56,
-                    color: data.iconColor.withOpacity(0.35),
-                  ),
-                ),
-                // Distance badge
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: data.distanceBadgeColor.withOpacity(0.25),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color:
-                            data.distanceBadgeColor.withOpacity(0.5),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.near_me,
-                            size: 11,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF374151)),
-                        const SizedBox(width: 4),
-                        Text(
-                          data.distance,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? Colors.white70
-                                : const Color(0xFF374151),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: const Center(
+              child: Icon(Icons.church, size: 56,
+                  color: Color(0x594A7C59)),
             ),
           ),
 
@@ -610,7 +572,7 @@ class _ChurchCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            data.name,
+                            name,
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
@@ -625,7 +587,7 @@ class _ChurchCard extends StatelessWidget {
                               const SizedBox(width: 3),
                               Expanded(
                                 child: Text(
-                                  data.address,
+                                  address.isNotEmpty ? address : 'Location not set',
                                   style: TextStyle(
                                       fontSize: 12, color: subColor),
                                   overflow: TextOverflow.ellipsis,
@@ -639,27 +601,22 @@ class _ChurchCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '${data.tagline} • ${data.denomination}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: subColor,
-                    fontStyle: FontStyle.italic,
+                if (denomination.isNotEmpty)
+                  Text(
+                    denomination,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: subColor,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     Icon(Icons.people_outline,
                         size: 12, color: subColor),
                     const SizedBox(width: 4),
-                    Text(data.memberCount,
-                        style: TextStyle(
-                            fontSize: 11, color: subColor)),
-                    const SizedBox(width: 12),
-                    Icon(Icons.schedule, size: 12, color: subColor),
-                    const SizedBox(width: 4),
-                    Text(data.services,
+                    Text(memberCount,
                         style: TextStyle(
                             fontSize: 11, color: subColor)),
                   ],
@@ -737,34 +694,6 @@ class _ChurchCard extends StatelessWidget {
       ),
     );
   }
-}
-
-// ── Data model ────────────────────────────────────────────────────────────────
-
-class _ChurchData {
-  final String name;
-  final String address;
-  final String tagline;
-  final String denomination;
-  final String distance;
-  final Color distanceBadgeColor;
-  final List<Color> gradientColors;
-  final Color iconColor;
-  final String memberCount;
-  final String services;
-
-  const _ChurchData({
-    required this.name,
-    required this.address,
-    required this.tagline,
-    required this.denomination,
-    required this.distance,
-    required this.distanceBadgeColor,
-    required this.gradientColors,
-    required this.iconColor,
-    required this.memberCount,
-    required this.services,
-  });
 }
 
 // ── Nav item ──────────────────────────────────────────────────────────────────

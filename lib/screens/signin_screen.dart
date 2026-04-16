@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
+import '../service/socket_service.dart';
 import 'dashboard_screen.dart';
 
 class SigninScreen extends StatefulWidget {
@@ -31,21 +33,40 @@ class _SigninScreenState extends State<SigninScreen> {
 
     setState(() => _loading = true);
 
-    // TODO: replace with real API call (POST /auth/signin)
-    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      await ApiService.login(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Set a placeholder user name until real auth returns a profile
-    if (userNameNotifier.value.isEmpty) {
-      userNameNotifier.value = _emailCtrl.text.split('@').first;
+      // Use email prefix as display name if name not already set
+      if (userNameNotifier.value.isEmpty) {
+        userNameNotifier.value = _emailCtrl.text.split('@').first;
+      }
+
+      // Connect real-time socket with the authenticated user ID
+      if (authUserIdNotifier.value != null) {
+        SocketService.connect(authUserIdNotifier.value!);
+      }
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        (_) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-      (_) => false,
-    );
   }
 
   @override

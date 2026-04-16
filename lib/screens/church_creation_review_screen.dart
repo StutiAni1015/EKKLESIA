@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../core/user_session.dart';
+import '../service/api_service.dart';
 
 const _indigo = Color(0xFF4F46E5);
 const _indigoLight = Color(0xFFE0E7FF);
@@ -17,7 +19,7 @@ class _ChurchCreationReviewScreenState
   bool _guidelinesAccepted = false;
   bool _isSubmitting = false;
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_guidelinesAccepted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -31,12 +33,47 @@ class _ChurchCreationReviewScreenState
       );
       return;
     }
+
     setState(() => _isSubmitting = true);
-    Future.delayed(const Duration(milliseconds: 1200), () {
+
+    final draft = churchDraftNotifier.value;
+    try {
+      await ApiService.createChurch(
+        name:              draft.name,
+        denomination:      draft.denomination,
+        address:           draft.address,
+        city:              draft.city,
+        country:           draft.country,
+        phone:             draft.phone,
+        email:             draft.email,
+        website:           draft.website,
+        youtube:           draft.youtube,
+        instagram:         draft.instagram,
+        allowTestimonies:  _allowTestimonies,
+      );
+      // Mark user as a pastor in local session
+      isPastorNotifier.value = true;
+      // Clear draft
+      draft.clear();
+      churchDraftNotifier.notifyListeners();
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      _showSuccessSheet();
-    });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red.shade400,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+    _showSuccessSheet();
   }
 
   void _showSuccessSheet() {
@@ -280,7 +317,9 @@ class _ChurchCreationReviewScreenState
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Grace Community Chapel',
+                                        churchDraftNotifier.value.name.isNotEmpty
+                                            ? churchDraftNotifier.value.name
+                                            : 'Your Church',
                                         style: TextStyle(
                                           fontSize: 15,
                                           fontWeight:
@@ -290,7 +329,9 @@ class _ChurchCreationReviewScreenState
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
-                                        'Non-denominational · Est. 1994',
+                                        churchDraftNotifier.value.denomination.isNotEmpty
+                                            ? churchDraftNotifier.value.denomination
+                                            : 'Church',
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: subColor),
@@ -314,7 +355,11 @@ class _ChurchCreationReviewScreenState
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    '123 Faith Avenue, Springfield, IL 62701, United States',
+                                    [
+                                      churchDraftNotifier.value.address,
+                                      churchDraftNotifier.value.city,
+                                      churchDraftNotifier.value.country,
+                                    ].where((s) => s.isNotEmpty).join(', '),
                                     style: TextStyle(
                                         fontSize: 13,
                                         color: subColor,

@@ -1,12 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
+import '../service/api_service.dart';
+import '../service/socket_service.dart';
 import 'community_guidelines_screen.dart';
 import 'dashboard_screen.dart';
 import 'location_currency_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_conditions_screen.dart';
-import '../core/user_session.dart';
 
 class SignupSecurityAgreementScreen extends StatefulWidget {
   const SignupSecurityAgreementScreen({super.key});
@@ -47,8 +49,40 @@ class _SignupSecurityAgreementScreenState
       );
       return;
     }
+
+    // Call signup API
+    try {
+      await ApiService.signup(
+        name: signupFullNameNotifier.value,
+        email: signupEmailNotifier.value,
+        password: _passwordCtrl.text,
+      );
+      // Auto-login to get the token
+      await ApiService.login(
+        email: signupEmailNotifier.value,
+        password: _passwordCtrl.text,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     accountVerifiedNotifier.value = true;
+
+    // Connect socket with authenticated user ID
+    if (authUserIdNotifier.value != null) {
+      SocketService.connect(authUserIdNotifier.value!);
+    }
+
     // Ask for location/currency first, then go to dashboard
+    if (!mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(

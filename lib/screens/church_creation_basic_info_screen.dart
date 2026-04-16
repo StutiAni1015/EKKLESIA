@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/user_session.dart';
 import 'church_creation_location_screen.dart';
 
 const _ivory = Color(0xFFFFFDF9);
@@ -298,12 +299,18 @@ class _ChurchCreationBasicInfoScreenState
         child: SizedBox(
           height: 56,
           child: ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const ChurchCreationLocationScreen(),
-              ),
-            ),
+            onPressed: () {
+              final draft = churchDraftNotifier.value;
+              draft.name = _nameCtrl.text.trim();
+              draft.denomination = _denomination ?? '';
+              churchDraftNotifier.notifyListeners();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ChurchCreationLocationScreen(),
+                ),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: _sage,
               foregroundColor: Colors.white,

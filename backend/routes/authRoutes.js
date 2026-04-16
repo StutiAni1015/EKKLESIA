@@ -60,7 +60,9 @@ const token = jwt.sign({ id: user.id }, "secretkey", {
 
   res.json({
     message: "Login successful",
-    token
+    token,
+    userId: user.id,
+    name: user.name
   });
 });
 

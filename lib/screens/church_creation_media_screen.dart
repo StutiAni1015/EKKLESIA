@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/user_session.dart';
 import 'church_creation_review_screen.dart';
 
 const _indigo = Color(0xFF4F46E5);
@@ -399,13 +400,20 @@ class _ChurchCreationMediaScreenState
               child: SizedBox(
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          const ChurchCreationReviewScreen(),
-                    ),
-                  ),
+                  onPressed: () {
+                    final draft = churchDraftNotifier.value;
+                    draft.website   = _websiteCtrl.text.trim();
+                    draft.youtube   = _youtubeCtrl.text.trim();
+                    draft.instagram = _instagramCtrl.text.trim();
+                    churchDraftNotifier.notifyListeners();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const ChurchCreationReviewScreen(),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _blue600,
                     foregroundColor: Colors.white,

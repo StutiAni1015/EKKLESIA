@@ -266,9 +266,11 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
       final name = _nameCtrl.text.trim();
       if (name.isNotEmpty) {
         userNameNotifier.value = name.split(' ').first;
+        signupFullNameNotifier.value = name;
       }
       // Register this email so it cannot be used again
       final email = _emailCtrl.text.trim().toLowerCase();
+      signupEmailNotifier.value = email;
       registeredEmailsNotifier.value = {
         ...registeredEmailsNotifier.value,
         email,

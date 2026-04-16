@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../service/api_service.dart';
 import 'bible_books_index_screen.dart';
 import 'church_profile_view_screen.dart';
 
@@ -18,99 +19,46 @@ class _ChurchSearchResultsScreenState
   String _activeFilter = 'All Results';
   int _navIndex = 3;
 
+  List<Map<String, dynamic>> _churches = [];
+  bool _loading = true;
+  String? _error;
+
   static const _filters = [
     'All Results',
     'Denomination',
-    'Distance',
-    'Service Time',
   ];
 
-  static const _churches = [
-    _ChurchResult(
-      name: 'Grace Community Baptist',
-      location: 'Springfield, IL',
-      denomination: 'Baptist',
-      distance: '0.8 mi',
-      members: 342,
-      serviceTime: 'Sun 9AM & 11AM',
-      gradientColors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-      iconColor: Colors.white,
-    ),
-    _ChurchResult(
-      name: 'Amazing Grace Baptist',
-      location: 'Chicago, IL',
-      denomination: 'Baptist',
-      distance: '2.3 mi',
-      members: 1240,
-      serviceTime: 'Sun 8AM, 10AM & 12PM',
-      gradientColors: [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-      iconColor: Colors.white,
-    ),
-    _ChurchResult(
-      name: 'Grace Covenant Church',
-      location: 'Naperville, IL',
-      denomination: 'Reformed Baptist',
-      distance: '4.1 mi',
-      members: 580,
-      serviceTime: 'Sun 10:30AM',
-      gradientColors: [Color(0xFF22C55E), Color(0xFF16A34A)],
-      iconColor: Colors.white,
-    ),
-    _ChurchResult(
-      name: 'Grace Reformed Baptist',
-      location: 'Peoria, IL',
-      denomination: 'Independent Baptist',
-      distance: '7.6 mi',
-      members: 215,
-      serviceTime: 'Sun 9AM & 6PM',
-      gradientColors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-      iconColor: Colors.white,
-    ),
-    _ChurchResult(
-      name: 'First Baptist Grace',
-      location: 'Bloomington, IL',
-      denomination: 'Southern Baptist',
-      distance: '12.4 mi',
-      members: 890,
-      serviceTime: 'Sun 9:30AM & 11AM',
-      gradientColors: [Color(0xFFEC5B13), Color(0xFFDC2626)],
-      iconColor: Colors.white,
-    ),
-    _ChurchResult(
-      name: 'Grace Fellowship Church',
-      location: 'Rockford, IL',
-      denomination: 'Non-denominational',
-      distance: '18.2 mi',
-      members: 430,
-      serviceTime: 'Sun 10AM',
-      gradientColors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-      iconColor: Colors.white,
-    ),
-  ];
+  List<Map<String, dynamic>> get _filtered {
+    if (_activeFilter == 'Denomination') {
+      final q = _searchCtrl.text.trim().toLowerCase();
+      return _churches.where((c) =>
+        (c['denomination'] as String? ?? '').toLowerCase().contains(q)
+      ).toList();
+    }
+    return _churches;
+  }
 
-  List<_ChurchResult> get _filtered {
-    final q = _searchCtrl.text.trim().toLowerCase();
-    return _churches.where((c) {
-      if (q.isNotEmpty &&
-          !c.name.toLowerCase().contains(q) &&
-          !c.location.toLowerCase().contains(q) &&
-          !c.denomination.toLowerCase().contains(q)) return false;
-      if (_activeFilter == 'Denomination' &&
-          !c.denomination.toLowerCase().contains('baptist')) return false;
-      if (_activeFilter == 'Distance') {
-        final d = double.tryParse(c.distance.split(' ')[0]) ?? 99;
-        return d <= 5;
-      }
-      if (_activeFilter == 'Service Time' &&
-          !c.serviceTime.contains('10')) return false;
-      return true;
-    }).toList();
+  Future<void> _search() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final results = await ApiService.getChurches(
+          query: _searchCtrl.text.trim());
+      if (!mounted) return;
+      setState(() {
+        _churches = results.cast<Map<String, dynamic>>();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _error = e.toString(); _loading = false; });
+    }
   }
 
   @override
   void initState() {
     super.initState();
     _searchCtrl = TextEditingController(text: widget.initialQuery);
+    _search();
   }
 
   @override
@@ -192,6 +140,7 @@ class _ChurchSearchResultsScreenState
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) => _search(),
                       ),
                     ),
                     if (_searchCtrl.text.isNotEmpty)
@@ -256,71 +205,112 @@ class _ChurchSearchResultsScreenState
             Divider(height: 1, color: borderColor),
 
             Expanded(
-              child: results.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.church_outlined,
-                              size: 48,
-                              color: subColor.withOpacity(0.4)),
-                          const SizedBox(height: 12),
-                          Text('No churches found',
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: subColor)),
-                          const SizedBox(height: 4),
-                          Text('Try a different search or filter',
-                              style: TextStyle(
-                                  fontSize: 12, color: subColor)),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          MediaQuery.of(context).padding.bottom + 80),
-                      itemCount: results.length + 1,
-                      itemBuilder: (context, i) {
-                        if (i == 0) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Text(
-                              "Found ${results.length} churches matching '${_searchCtrl.text.isEmpty ? 'all' : _searchCtrl.text}'",
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: subColor,
-                              ),
-                            ),
-                          );
-                        }
-                        final c = results[i - 1];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _ChurchCard(
-                            church: c,
-                            cardBg: cardBg,
-                            textColor: textColor,
-                            subColor: subColor,
-                            borderColor: borderColor,
-                            onViewProfile: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ChurchProfileViewScreen(
-                                  churchName: c.name,
-                                  denomination: c.denomination,
-                                  location: c.location,
-                                  isMember: false,
-                                ),
-                              ),
-                            ),
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.wifi_off_outlined,
+                                  size: 48, color: subColor),
+                              const SizedBox(height: 12),
+                              Text('Could not load churches',
+                                  style: TextStyle(
+                                      fontSize: 15, color: subColor)),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                  onPressed: _search,
+                                  child: const Text('Retry')),
+                            ],
                           ),
-                        );
-                      },
-                    ),
+                        )
+                      : _filtered.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.church_outlined,
+                                      size: 48,
+                                      color: subColor.withOpacity(0.4)),
+                                  const SizedBox(height: 12),
+                                  Text('No churches found',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: subColor)),
+                                  const SizedBox(height: 4),
+                                  Text('Try a different search or filter',
+                                      style: TextStyle(
+                                          fontSize: 12, color: subColor)),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: EdgeInsets.fromLTRB(
+                                  16,
+                                  12,
+                                  16,
+                                  MediaQuery.of(context).padding.bottom +
+                                      80),
+                              itemCount: _filtered.length + 1,
+                              itemBuilder: (context, i) {
+                                if (i == 0) {
+                                  return Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 14),
+                                    child: Text(
+                                      "Found ${_filtered.length} church${_filtered.length != 1 ? 'es' : ''}"
+                                      "${_searchCtrl.text.isNotEmpty ? " matching '${_searchCtrl.text}'" : ''}",
+                                      style: TextStyle(
+                                          fontSize: 13, color: subColor),
+                                    ),
+                                  );
+                                }
+                                final c = _filtered[i - 1];
+                                final location = [
+                                  c['city'],
+                                  c['country']
+                                ]
+                                    .where((s) =>
+                                        s != null &&
+                                        (s as String).isNotEmpty)
+                                    .join(', ');
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.only(bottom: 12),
+                                  child: _ChurchCard(
+                                    name: c['name'] as String? ?? '',
+                                    location: location,
+                                    denomination:
+                                        c['denomination'] as String? ?? '',
+                                    members:
+                                        (c['members'] as List?)?.length ??
+                                            0,
+                                    cardBg: cardBg,
+                                    textColor: textColor,
+                                    subColor: subColor,
+                                    borderColor: borderColor,
+                                    onViewProfile: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            ChurchProfileViewScreen(
+                                          churchName:
+                                              c['name'] as String? ?? '',
+                                          denomination:
+                                              c['denomination']
+                                                      as String? ??
+                                                  '',
+                                          location: location,
+                                          isMember: false,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
             ),
           ],
         ),
@@ -401,7 +391,10 @@ class _ChurchSearchResultsScreenState
 }
 
 class _ChurchCard extends StatelessWidget {
-  final _ChurchResult church;
+  final String name;
+  final String location;
+  final String denomination;
+  final int members;
   final Color cardBg;
   final Color textColor;
   final Color subColor;
@@ -409,7 +402,10 @@ class _ChurchCard extends StatelessWidget {
   final VoidCallback onViewProfile;
 
   const _ChurchCard({
-    required this.church,
+    required this.name,
+    required this.location,
+    required this.denomination,
+    required this.members,
     required this.cardBg,
     required this.textColor,
     required this.subColor,
@@ -439,7 +435,7 @@ class _ChurchCard extends StatelessWidget {
               height: 96,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: church.gradientColors,
+                  colors: const [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -464,7 +460,7 @@ class _ChurchCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      church.denomination,
+                      denomination.isNotEmpty ? denomination : 'Church',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -474,7 +470,7 @@ class _ChurchCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    church.name,
+                    name,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -491,7 +487,7 @@ class _ChurchCard extends StatelessWidget {
                       const SizedBox(width: 2),
                       Expanded(
                         child: Text(
-                          '${church.location} · ${church.distance}',
+                          location.isNotEmpty ? location : 'Location not set',
                           style: TextStyle(fontSize: 11, color: subColor),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -573,24 +569,3 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _ChurchResult {
-  final String name;
-  final String location;
-  final String denomination;
-  final String distance;
-  final int members;
-  final String serviceTime;
-  final List<Color> gradientColors;
-  final Color iconColor;
-
-  const _ChurchResult({
-    required this.name,
-    required this.location,
-    required this.denomination,
-    required this.distance,
-    required this.members,
-    required this.serviceTime,
-    required this.gradientColors,
-    required this.iconColor,
-  });
-}

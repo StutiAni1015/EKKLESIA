@@ -110,16 +110,16 @@ router.post("/:id/comment", protect, async (req, res) => {
   prayer.comments.push(comment);
   await prayer.save();
 
-  // 🔔 Notification (COMMENT)
-  if (prayer.user.toString() !== req.user.id) {
-    await Notification.create({
-      user: prayer.user,
-      fromUser: req.user.id,
-      type: "comment",
-      prayer: prayer._id,
-      message: "Someone commented on your prayer"
-    });
-  }
+// 🔔 Notification (COMMENT)
+if (prayer.user.toString() !== req.user.id) {
+  await Notification.create({
+    user: prayer.user,
+    fromUser: req.user.id,
+    type: "comment",
+    prayer: prayer._id,
+    message: `${req.user.name} commented: "${text}" 💬`
+  });
+}
 
   const updatedPrayer = await Prayer.findById(req.params.id)
     .populate("comments.user", "name email");

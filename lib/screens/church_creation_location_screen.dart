@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/user_session.dart';
 import 'church_creation_media_screen.dart';
 
 const _indigo = Color(0xFF4F46E5);
@@ -39,6 +40,13 @@ class _ChurchCreationLocationScreenState
   }
 
   void _submit() {
+    final draft = churchDraftNotifier.value;
+    draft.address = _addressCtrl.text.trim();
+    draft.city    = _cityCtrl.text.trim();
+    draft.country = _country ?? '';
+    draft.phone   = _phoneCtrl.text.trim();
+    draft.email   = _emailCtrl.text.trim();
+    churchDraftNotifier.notifyListeners();
     Navigator.push(
       context,
       MaterialPageRoute(
