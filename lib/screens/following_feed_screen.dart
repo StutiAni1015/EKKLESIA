@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../widgets/app_bottom_bar.dart';
 import 'sermon_player_screen.dart';
 
 const _sage = Color(0xFFB2B8A3);
@@ -15,11 +16,11 @@ class FollowingFeedScreen extends StatefulWidget {
 }
 
 class _FollowingFeedScreenState extends State<FollowingFeedScreen> {
-  bool _myChurch = false; // Following tab is active by default
+  bool _myChurch = false;
   bool _amened = false;
-  int _amenCount = 42;
+  int _amenCount = 0;
   bool _verseAmened = false;
-  int _verseAmenCount = 128;
+  int _verseAmenCount = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,9 @@ class _FollowingFeedScreenState extends State<FollowingFeedScreen> {
 
     return Scaffold(
       backgroundColor: bg,
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -908,17 +912,6 @@ class _FollowingFeedScreenState extends State<FollowingFeedScreen> {
               ],
             ),
 
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                bottomPadding: MediaQuery.of(context).padding.bottom,
-                onHome: () => Navigator.maybePop(context),
-              ),
-            ),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../widgets/app_bottom_bar.dart';
 import 'plan_checklist_sheet.dart';
 
 class DiscoverPlansScreen extends StatefulWidget {
@@ -149,6 +150,9 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
 
     return Scaffold(
       backgroundColor: bg,
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
+      floatingActionButton: buildCenterFab(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -330,17 +334,6 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
               ],
             ),
 
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                bottomPadding: MediaQuery.of(context).padding.bottom,
-                onHome: () => Navigator.maybePop(context),
-              ),
-            ),
           ],
         ),
       ),

@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
+import '../service/location_service.dart';
 import 'signup_basic_profile_screen.dart';
 import 'signin_screen.dart';
 
@@ -72,6 +74,111 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       begin: const Offset(0, 0.08),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut));
+
+    // Ask for location after the first frame so the UI is visible first
+    WidgetsBinding.instance.addPostFrameCallback((_) => _askLocation());
+  }
+
+  Future<void> _askLocation() async {
+    if (!mounted) return;
+    // Only prompt if we haven't already obtained a location this session
+    if (userLatNotifier.value != null) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 8),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.location_on, color: AppColors.primary, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Find Churches Near You',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Allow Ekklesia to use your location so we can show churches close to you.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.5,
+                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Not Now',
+                    style: TextStyle(
+                        color: isDark
+                            ? const Color(0xFF94A3B8)
+                            : const Color(0xFF64748B)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 3,
+                  ),
+                  child: const Text('Allow',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final position = await LocationService.requestAndGetLocation();
+      if (position != null) {
+        userLatNotifier.value = position.latitude;
+        userLngNotifier.value = position.longitude;
+      }
+    }
   }
 
   @override
@@ -118,7 +225,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                     ),
 
-                    Column(
+                    SingleChildScrollView(
+                      child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Globe with floating icons
@@ -211,25 +319,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             opacity: _fadeAnim,
                             child: Column(
                               children: [
-                                // Small logo circle
+                                // App logo
                                 Container(
-                                  width: 56,
-                                  height: 56,
+                                  width: 96,
+                                  height: 96,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(0.88),
+                                    color: Colors.white,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.white.withOpacity(0.4),
-                                        blurRadius: 12,
-                                        spreadRadius: 2,
+                                        color: Colors.white.withOpacity(0.6),
+                                        blurRadius: 24,
+                                        spreadRadius: 6,
                                       ),
                                     ],
                                   ),
-                                  child: const Icon(
-                                    Icons.church,
-                                    color: AppColors.primary,
-                                    size: 28,
+                                  padding: const EdgeInsets.all(10),
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                                 const SizedBox(height: 10),
@@ -294,6 +402,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         ),
                       ],
                     ),
+                    ), // SingleChildScrollView
                   ],
                 ),
               ),

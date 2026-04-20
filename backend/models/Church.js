@@ -25,6 +25,10 @@ const churchSchema = new mongoose.Schema(
       },
     ],
     // 'pending' until an admin approves; set to 'approved' to appear in search
+    // Optional coordinates for proximity search
+    lat: { type: Number, default: null },
+    lng: { type: Number, default: null },
+
     status: {
       type: String,
       enum: ["pending", "approved"],

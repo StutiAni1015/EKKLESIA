@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
 import '../service/api_service.dart';
+import '../service/location_service.dart';
 import 'bible_books_index_screen.dart';
 import 'church_search_results_screen.dart';
 
@@ -60,6 +62,17 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  /// Returns a formatted distance string if both user and church have coordinates.
+  String? _distanceLabel(Map<String, dynamic> church) {
+    final userLat = userLatNotifier.value;
+    final userLng = userLngNotifier.value;
+    final cLat = (church['lat'] as num?)?.toDouble();
+    final cLng = (church['lng'] as num?)?.toDouble();
+    if (userLat == null || cLat == null) return null;
+    final miles = LocationService.distanceMiles(userLat, userLng!, cLat, cLng!);
+    return LocationService.formatDistance(miles);
   }
 
   Future<void> _join(int index) async {
@@ -372,6 +385,7 @@ class _FindYourChurchScreenState extends State<FindYourChurchScreen> {
                               .join(', '),
                           denomination: c['denomination'] as String? ?? '',
                           memberCount: '${(c['members'] as List?)?.length ?? 0} members',
+                          distance: _distanceLabel(c),
                           isJoining: _joiningIndex == i,
                           isDark: isDark,
                           textColor: textColor,
@@ -498,6 +512,7 @@ class _ChurchCard extends StatelessWidget {
   final String address;
   final String denomination;
   final String memberCount;
+  final String? distance; // null = location unknown
   final bool isJoining;
   final bool isDark;
   final Color textColor;
@@ -510,6 +525,7 @@ class _ChurchCard extends StatelessWidget {
     required this.address,
     required this.denomination,
     required this.memberCount,
+    this.distance,
     required this.isJoining,
     required this.isDark,
     required this.textColor,
@@ -552,9 +568,42 @@ class _ChurchCard extends StatelessWidget {
                 colors: [Color(0xFFD7ECE4), Color(0xFFB6C9BB)],
               ),
             ),
-            child: const Center(
-              child: Icon(Icons.church, size: 56,
-                  color: Color(0x594A7C59)),
+            child: Stack(
+              children: [
+                const Center(
+                  child: Icon(Icons.church, size: 56,
+                      color: Color(0x594A7C59)),
+                ),
+                if (distance != null)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.85),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.near_me,
+                              size: 11, color: Color(0xFF374151)),
+                          const SizedBox(width: 4),
+                          Text(
+                            distance!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF374151),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 

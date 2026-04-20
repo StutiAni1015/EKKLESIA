@@ -16,6 +16,7 @@ import 'treasury_lock_screen.dart';
 import 'church_committee_hub_screen.dart';
 import 'book_library_screen.dart';
 import 'location_currency_screen.dart';
+import 'global_prayer_map_screen.dart';
 import '../widgets/tap_scale.dart';
 
 // ─── Palette ────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  int _unreadCount = 0;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -71,6 +74,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,
     );
+  }
+  @override
+  void initState() {
+    super.initState();
   }
 
   // ─── Header ────────────────────────────────────────────────────
@@ -160,14 +167,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           // Notification button
-          _IconBtn(
-            icon: Icons.notifications_outlined,
-            isDark: isDark,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (_) => const MemberNotificationAlertScreen()),
-            ),
+          Stack(
+            children: [
+              _IconBtn(
+                icon: Icons.notifications_outlined,
+                isDark: isDark,
+                onTap: () {
+                  setState(() => _unreadCount = 0);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MemberNotificationAlertScreen(),
+                    ),
+                  );
+                },
+              ),
+              if (_unreadCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      _unreadCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 8),
           // Timer button
@@ -672,6 +707,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _QuickAction(Icons.favorite, 'Prayer Requests', _roseBg, _dustyRose,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const PrayerCommunityFeedScreen()))),
+      _QuickAction(Icons.public, 'Global Prayer', _blueBg, _babyBlue,
+          () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const GlobalPrayerMapScreen()))),
       _QuickAction(Icons.featured_play_list, 'My Giving', _blueBg, _babyBlue,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const MyGivingDashboardScreen()))),

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
-import '../service/socket_service.dart';
+// authTokenNotifier and authUserIdNotifier are exported from api_service.dart
 import 'dashboard_screen.dart';
 
 class SigninScreen extends StatefulWidget {
@@ -20,6 +20,7 @@ class _SigninScreenState extends State<SigninScreen> {
 
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _rememberMe = false;
 
   @override
   void dispose() {
@@ -38,35 +39,51 @@ class _SigninScreenState extends State<SigninScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-
-      if (!mounted) return;
-
-      // Use email prefix as display name if name not already set
-      if (userNameNotifier.value.isEmpty) {
-        userNameNotifier.value = _emailCtrl.text.split('@').first;
-      }
-
-      // Connect real-time socket with the authenticated user ID
-      if (authUserIdNotifier.value != null) {
-        SocketService.connect(authUserIdNotifier.value!);
-      }
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        (_) => false,
-      );
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-        ),
+      final msg = e.toString();
+      // If it's a real server rejection (wrong credentials, etc.), stop here.
+      if (!msg.contains('SocketException') &&
+          !msg.contains('Connection refused') &&
+          !msg.contains('Failed host lookup') &&
+          !msg.contains('Connection reset') &&
+          !msg.contains('Network is unreachable')) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+      // Connectivity issue — proceed with a local session.
+    }
+
+    if (!mounted) return;
+
+    // Use email prefix as display name if name not already set
+    if (userNameNotifier.value.isEmpty) {
+      userNameNotifier.value = _emailCtrl.text.split('@').first;
+    }
+
+    // Persist session so the user is auto-logged-in on next app restart.
+    if (_rememberMe) {
+      await ApiService.saveSession(
+        token:  authTokenNotifier.value ?? _emailCtrl.text.trim(),
+        userId: authUserIdNotifier.value ?? _emailCtrl.text.trim(),
+        name:   userNameNotifier.value,
       );
     }
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      (_) => false,
+    );
   }
 
   @override
@@ -203,28 +220,62 @@ class _SigninScreenState extends State<SigninScreen> {
 
                             const SizedBox(height: 8),
 
-                            // Forgot password
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  // TODO: navigate to forgot password
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'Forgot password?',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w500,
+                            // Remember me + Forgot password row
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Checkbox(
+                                    value: _rememberMe,
+                                    onChanged: (v) =>
+                                        setState(() => _rememberMe = v ?? false),
+                                    activeColor: AppColors.primary,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4)),
+                                    side: BorderSide(
+                                      color: isDark
+                                          ? const Color(0xFF64748B)
+                                          : const Color(0xFFCBD5E1),
+                                      width: 1.5,
+                                    ),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => setState(
+                                      () => _rememberMe = !_rememberMe),
+                                  child: Text(
+                                    'Remember me',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: labelColor,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                TextButton(
+                                  onPressed: () {},
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Forgot password?',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

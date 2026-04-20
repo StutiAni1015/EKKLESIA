@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../widgets/app_bottom_bar.dart';
 import 'new_journal_entry_screen.dart';
 
 class MySpiritualJournalScreen extends StatefulWidget {
@@ -75,6 +76,9 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
 
     return Scaffold(
       backgroundColor: bg,
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
+      floatingActionButton: buildCenterFab(context),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -224,11 +228,12 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
               ],
             ),
 
-            // FAB
+            // New entry FAB (corner)
             Positioned(
               bottom: MediaQuery.of(context).padding.bottom + 80,
               right: 16,
               child: FloatingActionButton(
+                heroTag: 'journal_add_fab',
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -241,18 +246,6 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
                 foregroundColor: Colors.white,
                 elevation: 8,
                 child: const Icon(Icons.add, size: 28),
-              ),
-            ),
-
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                bottomPadding: MediaQuery.of(context).padding.bottom,
-                onHome: () => Navigator.maybePop(context),
               ),
             ),
           ],

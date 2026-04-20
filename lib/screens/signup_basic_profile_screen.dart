@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import 'signup_faith_background_screen.dart';
@@ -24,39 +26,40 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
   DateTime? _dob;
   String? _gender;
   String? _selectedCountry;
+  bool _isDetectingCity = false;
 
   // Country → (countryCode, currency, symbol)
   static const _countries = [
-    ('United States', 'US', 'USD', '\$'),
-    ('United Kingdom', 'GB', 'GBP', '£'),
-    ('Nigeria', 'NG', 'NGN', '₦'),
-    ('Kenya', 'KE', 'KES', 'KSh'),
-    ('Ghana', 'GH', 'GHS', '₵'),
-    ('South Africa', 'ZA', 'ZAR', 'R'),
-    ('Uganda', 'UG', 'UGX', 'USh'),
-    ('Ethiopia', 'ET', 'ETB', 'Br'),
-    ('Tanzania', 'TZ', 'TZS', 'TSh'),
-    ('Rwanda', 'RW', 'RWF', 'Fr'),
-    ('Brazil', 'BR', 'BRL', 'R\$'),
-    ('Canada', 'CA', 'CAD', 'CA\$'),
-    ('Australia', 'AU', 'AUD', 'A\$'),
-    ('India', 'IN', 'INR', '₹'),
-    ('Philippines', 'PH', 'PHP', '₱'),
-    ('South Korea', 'KR', 'KRW', '₩'),
-    ('Germany', 'DE', 'EUR', '€'),
-    ('France', 'FR', 'EUR', '€'),
-    ('Mexico', 'MX', 'MXN', 'MX\$'),
-    ('Colombia', 'CO', 'COP', 'Col\$'),
     ('Argentina', 'AR', 'ARS', 'AR\$'),
-    ('China', 'CN', 'CNY', '¥'),
-    ('Japan', 'JP', 'JPY', '¥'),
-    ('Indonesia', 'ID', 'IDR', 'Rp'),
-    ('Pakistan', 'PK', 'PKR', '₨'),
-    ('Zimbabwe', 'ZW', 'USD', '\$'),
-    ('Zambia', 'ZM', 'ZMW', 'ZK'),
+    ('Australia', 'AU', 'AUD', 'A\$'),
+    ('Brazil', 'BR', 'BRL', 'R\$'),
     ('Cameroon', 'CM', 'XAF', 'Fr'),
+    ('Canada', 'CA', 'CAD', 'CA\$'),
+    ('China', 'CN', 'CNY', '¥'),
+    ('Colombia', 'CO', 'COP', 'Col\$'),
     ('DR Congo', 'CD', 'CDF', 'Fr'),
+    ('Ethiopia', 'ET', 'ETB', 'Br'),
+    ('France', 'FR', 'EUR', '€'),
+    ('Germany', 'DE', 'EUR', '€'),
+    ('Ghana', 'GH', 'GHS', '₵'),
+    ('India', 'IN', 'INR', '₹'),
+    ('Indonesia', 'ID', 'IDR', 'Rp'),
     ('Ivory Coast', 'CI', 'XOF', 'Fr'),
+    ('Japan', 'JP', 'JPY', '¥'),
+    ('Kenya', 'KE', 'KES', 'KSh'),
+    ('Mexico', 'MX', 'MXN', 'MX\$'),
+    ('Nigeria', 'NG', 'NGN', '₦'),
+    ('Pakistan', 'PK', 'PKR', '₨'),
+    ('Philippines', 'PH', 'PHP', '₱'),
+    ('Rwanda', 'RW', 'RWF', 'Fr'),
+    ('South Africa', 'ZA', 'ZAR', 'R'),
+    ('South Korea', 'KR', 'KRW', '₩'),
+    ('Tanzania', 'TZ', 'TZS', 'TSh'),
+    ('Uganda', 'UG', 'UGX', 'USh'),
+    ('United Kingdom', 'GB', 'GBP', '£'),
+    ('United States', 'US', 'USD', '\$'),
+    ('Zambia', 'ZM', 'ZMW', 'ZK'),
+    ('Zimbabwe', 'ZW', 'USD', '\$'),
   ];
 
   static const _genders = [
@@ -74,6 +77,41 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
     _locationCtrl.dispose();
     _cityCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _detectCity() async {
+    setState(() => _isDetectingCity = true);
+    try {
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      if (perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _isDetectingCity = false);
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      final placemarks =
+          await placemarkFromCoordinates(pos.latitude, pos.longitude);
+
+      if (placemarks.isNotEmpty && mounted) {
+        final p = placemarks.first;
+        final city = p.locality ?? p.subAdministrativeArea ?? p.administrativeArea ?? '';
+        _cityCtrl.text = city;
+      }
+    } catch (_) {
+      // silently fail — user can type manually
+    } finally {
+      if (mounted) setState(() => _isDetectingCity = false);
+    }
   }
 
   Future<void> _pickDate() async {
@@ -793,6 +831,26 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
                                   ),
                                 ),
                               ),
+                              _isDetectingCity
+                                  ? const Padding(
+                                      padding: EdgeInsets.only(right: 12),
+                                      child: SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : IconButton(
+                                      icon: const Icon(
+                                          Icons.my_location,
+                                          color: AppColors.primary,
+                                          size: 20),
+                                      tooltip: 'Detect my city',
+                                      onPressed: _detectCity,
+                                    ),
                             ],
                           ),
                         ),

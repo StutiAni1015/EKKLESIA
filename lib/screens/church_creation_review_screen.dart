@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
+import '../service/location_service.dart';
 
 const _indigo = Color(0xFF4F46E5);
 const _indigoLight = Color(0xFFE0E7FF);
@@ -37,6 +38,20 @@ class _ChurchCreationReviewScreenState
     setState(() => _isSubmitting = true);
 
     final draft = churchDraftNotifier.value;
+
+    // Grab location — use already-stored value or try fetching now
+    double? lat = userLatNotifier.value;
+    double? lng = userLngNotifier.value;
+    if (lat == null) {
+      final pos = await LocationService.requestAndGetLocation();
+      if (pos != null) {
+        lat = pos.latitude;
+        lng = pos.longitude;
+        userLatNotifier.value = lat;
+        userLngNotifier.value = lng;
+      }
+    }
+
     try {
       await ApiService.createChurch(
         name:              draft.name,
@@ -50,6 +65,8 @@ class _ChurchCreationReviewScreenState
         youtube:           draft.youtube,
         instagram:         draft.instagram,
         allowTestimonies:  _allowTestimonies,
+        lat:               lat,
+        lng:               lng,
       );
       // Mark user as a pastor in local session
       isPastorNotifier.value = true;

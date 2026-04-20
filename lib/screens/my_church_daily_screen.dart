@@ -28,12 +28,12 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
   bool _myChurchSelected = true;
 
   // Prayer request pray state
-  final _praying = <int>{0}; // card 0 already "praying"
-  final _prayCounts = [12, 8];
+  final _praying = <int>{};
+  final _prayCounts = [0, 0];
 
   // Testimony amen state
   final _amened = <int>{};
-  final _amenCounts = [24, 11];
+  final _amenCounts = [0, 0];
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +50,7 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
     return Scaffold(
       backgroundColor: bg,
       bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,

@@ -650,7 +650,7 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
       ),
 
       bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }

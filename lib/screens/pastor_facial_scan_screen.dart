@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:permission_handler/permission_handler.dart';
 import '../core/app_colors.dart';
 import 'verification_successful_screen.dart';
 import 'scan_failure_screen.dart';
@@ -48,7 +49,9 @@ class _PastorFacialScanScreenState extends State<PastorFacialScanScreen>
     super.dispose();
   }
 
-  void _startCapture() {
+  Future<void> _startCapture() async {
+    // TODO: re-enable camera permission check when testing on a real device.
+    // Permission.camera.request() is skipped on simulator since it has no camera.
     _ctrl.forward().then((_) {
       if (!mounted) return;
       // Simulate 70% success rate
@@ -83,6 +86,48 @@ class _PastorFacialScanScreenState extends State<PastorFacialScanScreen>
         ),
       );
     });
+  }
+
+  void _showPermissionDeniedDialog({required bool permanent}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor:
+            isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Camera Access Required',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          permanent
+              ? 'Camera permission was permanently denied. Please enable it in Settings to use facial verification.'
+              : 'Camera access is needed to scan your face for identity verification.',
+          style: const TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (permanent) openAppSettings();
+            },
+            child: Text(permanent ? 'Open Settings' : 'OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

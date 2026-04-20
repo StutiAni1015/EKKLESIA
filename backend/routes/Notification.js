@@ -1,35 +1,16 @@
-const mongoose = require("mongoose");
+const express = require("express");
+const router = express.Router();
 
-const notificationSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
+const Notification = require("../models/Notification");
+const protect = require("../middleware/authMiddleware");
 
-    fromUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
-    },
+// 📥 Get notifications
+router.get("/", protect, async (req, res) => {
+  const notifications = await Notification.find({ user: req.user.id })
+    .populate("fromUser", "name email")
+    .sort({ createdAt: -1 });
 
-    type: {
-      type: String,
-      enum: ["like", "comment"]
-    },
+  res.json(notifications);
+});
 
-    prayer: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Prayer"
-    },
-
-    message: String,
-
-    read: {
-      type: Boolean,
-      default: false
-    }
-  },
-  { timestamps: true }
-);
-
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = router;

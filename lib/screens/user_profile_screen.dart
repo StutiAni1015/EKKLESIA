@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'create_church_screen.dart';
 import 'pastor_church_feed_screen.dart';
+import 'welcome_screen.dart';
 import '../widgets/tap_scale.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -30,7 +32,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: bg,
       bottomNavigationBar: AppBottomBar(activeIndex: kTabProfile),
-      floatingActionButton: buildCenterFab(context),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabProfile),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
@@ -561,15 +563,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             child: const Text('Cancel'),
                           ),
                           TextButton(
-                            onPressed: () {
+                            onPressed: () async {
                               Navigator.of(ctx).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Logged out successfully.'),
-                                  backgroundColor: AppColors.primary,
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              // Erase saved "remember me" session, clear memory.
+                              await ApiService.clearSavedSession();
+                              ApiService.clearSession();
+                              resetAllAppState();
+                              if (context.mounted) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                    builder: (_) => const WelcomeScreen(
+                                      languageCode: 'en',
+                                      languageNativeName: 'English',
+                                    ),
+                                  ),
+                                  (_) => false,
+                                );
+                              }
                             },
                             child: const Text('Log Out',
                                 style:

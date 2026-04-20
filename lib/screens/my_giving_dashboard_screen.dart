@@ -14,56 +14,8 @@ class MyGivingDashboardScreen extends StatefulWidget {
 }
 
 class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
-  static const _needs = [
-    _FundItem(
-      title: 'Youth Mission Trip',
-      subtitle: 'Supporting our teens\' summer trip to Mexico.',
-      raised: 1200,
-      goal: 5000,
-      iconColor: Color(0xFFEC5B13),
-      gradientStart: Color(0xFF6B7FD4),
-      gradientEnd: Color(0xFF9B8BBF),
-    ),
-    _FundItem(
-      title: 'New Roof Fund',
-      subtitle: 'Critical repairs for the main sanctuary.',
-      raised: 15000,
-      goal: 40000,
-      iconColor: Color(0xFF64748B),
-      gradientStart: Color(0xFF94A3B8),
-      gradientEnd: Color(0xFF64748B),
-    ),
-    _FundItem(
-      title: 'Community Food Bank',
-      subtitle: 'Providing meals for 200 local families.',
-      raised: 4100,
-      goal: 5000,
-      iconColor: Color(0xFF10B981),
-      gradientStart: Color(0xFF6EE7B7),
-      gradientEnd: Color(0xFF059669),
-    ),
-  ];
-
-  static const _history = [
-    _HistoryItem(
-      label: 'General Offering',
-      date: 'May 12, 2024',
-      amount: '\$150.00',
-      isGeneral: true,
-    ),
-    _HistoryItem(
-      label: 'Youth Mission Trip',
-      date: 'May 05, 2024',
-      amount: '\$200.00',
-      isGeneral: false,
-    ),
-    _HistoryItem(
-      label: 'General Offering',
-      date: 'April 28, 2024',
-      amount: '\$150.00',
-      isGeneral: true,
-    ),
-  ];
+  static const _needs = <_FundItem>[];
+  static const _history = <_HistoryItem>[];
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +38,7 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
     return Scaffold(
       backgroundColor: bg,
       bottomNavigationBar: const AppBottomBar(activeIndex: kTabGivings),
-      floatingActionButton: buildCenterFab(context),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabGivings),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,

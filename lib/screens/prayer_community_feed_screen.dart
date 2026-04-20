@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../widgets/app_bottom_bar.dart';
 import 'add_prayer_request_screen.dart';
 import 'bible_books_index_screen.dart';
+import 'find_your_church_screen.dart';
 
 class PrayerCommunityFeedScreen extends StatefulWidget {
   const PrayerCommunityFeedScreen({super.key});
@@ -43,6 +45,9 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
 
     return Scaffold(
       backgroundColor: bg,
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -132,33 +137,125 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
                 controller: _tabController,
                 children: [
                   // Community tab
-                  ListView.separated(
-                    padding: EdgeInsets.fromLTRB(
-                        16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-                    itemCount: _requests.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, i) {
-                      final item = _requests[i];
-                      final hasPrayed = _prayed.contains(i);
-                      return _PrayerCard(
-                        item: item,
-                        hasPrayed: hasPrayed,
-                        cardBg: cardBg,
-                        textColor: textColor,
-                        subColor: subColor,
-                        onPray: () {
-                          setState(() {
-                            if (hasPrayed) {
-                              _prayed.remove(i);
-                              _requests[i] = item.copyWith(
-                                  prayCount: item.prayCount - 1);
-                            } else {
-                              _prayed.add(i);
-                              _requests[i] = item.copyWith(
-                                  prayCount: item.prayCount + 1);
-                            }
-                          });
+                  ValueListenableBuilder<bool>(
+                    valueListenable: hasJoinedChurchNotifier,
+                    builder: (context, hasJoined, _) {
+                      if (!hasJoined) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.church_outlined,
+                                    size: 56,
+                                    color: AppColors.primary.withOpacity(0.35)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Join a community to see prayer requests',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Connect with a church and pray together with your brothers and sisters.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: subColor, height: 1.6, fontSize: 13),
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const FindYourChurchScreen()),
+                                  ),
+                                  icon: const Icon(Icons.search, size: 18),
+                                  label: const Text('Find a Church'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (_requests.isEmpty) {
+                        return Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.volunteer_activism_outlined,
+                                    size: 56,
+                                    color: AppColors.primary.withOpacity(0.35)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No prayer requests yet',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Be the first to add a prayer request for your community.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                      color: subColor, height: 1.6, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        padding: EdgeInsets.fromLTRB(16, 16, 16,
+                            MediaQuery.of(context).padding.bottom + 96),
+                        itemCount: _requests.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, i) {
+                          final item = _requests[i];
+                          final hasPrayed = _prayed.contains(i);
+                          return _PrayerCard(
+                            item: item,
+                            hasPrayed: hasPrayed,
+                            cardBg: cardBg,
+                            textColor: textColor,
+                            subColor: subColor,
+                            onPray: () {
+                              setState(() {
+                                if (hasPrayed) {
+                                  _prayed.remove(i);
+                                  _requests[i] = item.copyWith(
+                                      prayCount: item.prayCount - 1);
+                                } else {
+                                  _prayed.add(i);
+                                  _requests[i] = item.copyWith(
+                                      prayCount: item.prayCount + 1);
+                                }
+                              });
+                            },
+                          );
                         },
                       );
                     },
@@ -319,36 +416,6 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
               ),
             ),
 
-            // FAB
-            Positioned(
-              bottom: MediaQuery.of(context).padding.bottom + 80,
-              right: 16,
-              child: FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const AddPrayerRequestScreen(),
-                    ),
-                  );
-                },
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 8,
-                child: const Icon(Icons.add, size: 28),
-              ),
-            ),
-
-            // Bottom nav
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _BottomNav(
-                isDark: isDark,
-                padding: MediaQuery.of(context).padding.bottom,
-              ),
-            ),
           ],
         ),
       ),
@@ -646,101 +713,6 @@ class _MyPrayerCard extends StatelessWidget {
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  final bool isDark;
-  final double padding;
-
-  const _BottomNav({required this.isDark, required this.padding});
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = isDark
-        ? Colors.black.withOpacity(0.95)
-        : Colors.white.withOpacity(0.95);
-    final borderColor = isDark
-        ? AppColors.primary.withOpacity(0.1)
-        : const Color(0xFFE2E8F0);
-
-    return Container(
-      padding: EdgeInsets.fromLTRB(24, 8, 24, padding + 8),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border(top: BorderSide(color: borderColor)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _NavItem(
-            icon: Icons.home,
-            label: 'Home',
-            active: false,
-            onTap: () => Navigator.maybePop(context),
-          ),
-          _NavItem(
-            icon: Icons.group,
-            label: 'Groups',
-            active: false,
-            onTap: () => Navigator.maybePop(context),
-          ),
-          // FAB placeholder space
-          const SizedBox(width: 56),
-          _NavItem(
-            icon: Icons.volunteer_activism,
-            label: 'Pray',
-            active: true,
-            onTap: () {},
-          ),
-          _NavItem(
-            icon: Icons.person_outline,
-            label: 'Profile',
-            active: false,
-            onTap: () => Navigator.maybePop(context),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? AppColors.primary : const Color(0xFF94A3B8);
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 2),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.8,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 

@@ -2,14 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_colors.dart';
 import 'core/app_localizations.dart';
+import 'core/user_session.dart';
+import 'screens/dashboard_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'service/api_service.dart';
 
-void main() {
-  runApp(const EkklesiaApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  resetAllAppState(); // always start from a clean slate
+
+  // Restore a "remember me" session if one was saved.
+  Widget homeScreen = const WelcomeScreen(
+    languageCode: 'en',
+    languageNativeName: 'English',
+  );
+
+  final saved = await ApiService.loadSavedSession();
+  if (saved != null) {
+    authTokenNotifier.value  = saved['token'];
+    authUserIdNotifier.value = saved['userId'];
+    userNameNotifier.value   = saved['name'] ?? '';
+    homeScreen = const DashboardScreen();
+  }
+
+  runApp(EkklesiaApp(home: homeScreen));
 }
 
 class EkklesiaApp extends StatelessWidget {
-  const EkklesiaApp({super.key});
+  final Widget home;
+  const EkklesiaApp({super.key, required this.home});
 
   // Supported locales mirror the languages in LanguageSelectionScreen
   static const _supportedLocales = [
@@ -77,10 +98,7 @@ class EkklesiaApp extends StatelessWidget {
               ),
               splashFactory: InkRipple.splashFactory,
             ),
-            home: const WelcomeScreen(
-              languageCode: 'en',
-              languageNativeName: 'English',
-            ),
+            home: home,
           ),
         );
       },

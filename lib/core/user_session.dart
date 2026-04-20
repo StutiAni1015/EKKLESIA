@@ -1,6 +1,43 @@
 import 'package:flutter/material.dart';
 import '../data/bible_plan_readings.dart';
 
+/// Resets every in-memory notifier to its clean default.
+/// Call this at app launch to guarantee a fresh state every time.
+void resetAllAppState() {
+  isPastorNotifier.value           = false;
+  myChurchNotifier.value           = null;
+  churchPostsNotifier.value        = [];
+  membershipRequestsNotifier.value = [];
+  hasJoinedChurchNotifier.value    = false;
+  myPrayerRequestsNotifier.value   = [];
+  globalPrayerLightsNotifier.value = [];
+  savedSermonsNotifier.value       = [];
+  churchPaymentMethodsNotifier.value = [];
+  treasuryUnlockCodeNotifier.value = null;
+  treasuryAccessNotifier.value     = null;
+  todayPlanCompletedNotifier.value = false;
+  selectedPlanNotifier.value       = null;
+  userProfileEmojiNotifier.value   = '🙏';
+  emailVerifiedNotifier.value      = false;
+  phoneVerifiedNotifier.value      = false;
+  faceVerifiedNotifier.value       = false;
+  accountVerifiedNotifier.value    = false;
+  userNameNotifier.value           = '';
+  userCountryNotifier.value        = 'US';
+  userCountryIsoNotifier.value     = 'US';
+  userStateNotifier.value          = '';
+  userStateIsoNotifier.value       = '';
+  userCityNotifier.value           = '';
+  userCurrencyNotifier.value       = 'USD';
+  userCurrencySymbolNotifier.value = '\$';
+  signupFullNameNotifier.value     = '';
+  signupEmailNotifier.value        = '';
+  userLatNotifier.value            = null;   // GPS for church proximity only
+  userLngNotifier.value            = null;
+  registeredEmailsNotifier.value   = {};
+  churchDraftNotifier.value.clear();
+}
+
 // ── Pastor / Church management ────────────────────────────────────────────────
 
 /// Whether the current user is a pastor (set when they create a church).
@@ -119,6 +156,11 @@ const _bannedWords = <String>[
   'murder',
 ];
 
+/// User's current device location — set after location permission is granted.
+/// null = location not yet obtained or permission denied.
+final userLatNotifier = ValueNotifier<double?>(null);
+final userLngNotifier = ValueNotifier<double?>(null);
+
 /// Temporary storage for the in-progress signup flow (cleared after account creation).
 final signupFullNameNotifier = ValueNotifier<String>('');
 final signupEmailNotifier    = ValueNotifier<String>('');
@@ -213,6 +255,10 @@ final registeredEmailsNotifier = ValueNotifier<Set<String>>({});
 
 final userNameNotifier = ValueNotifier<String>('');
 final userCountryNotifier = ValueNotifier<String>('US');
+final userCountryIsoNotifier = ValueNotifier<String>('US');  // ISO-3166-1 alpha-2
+final userStateNotifier    = ValueNotifier<String>('');      // state/province name
+final userStateIsoNotifier = ValueNotifier<String>('');      // state ISO code
+final userCityNotifier     = ValueNotifier<String>('');      // city name
 final userCurrencyNotifier = ValueNotifier<String>('USD');
 final userCurrencySymbolNotifier = ValueNotifier<String>('\$');
 
@@ -264,6 +310,27 @@ class TreasuryAccessSession {
 
 /// True once the user has joined/registered with a church.
 final hasJoinedChurchNotifier = ValueNotifier<bool>(false);
+
+// ── Global Prayer Map lights ──────────────────────────────────────────────────
+
+/// A single prayer light placed on the global map.
+/// Only the country is stored — never exact coordinates — to protect privacy.
+class GlobalPrayerLight {
+  final String countryIso;   // ISO 3166-1 alpha-2, e.g. 'US', 'NG'
+  final String countryName;  // Display name, e.g. 'United States'
+  final DateTime addedAt;
+  int prayCount; // increments each time someone prays for it
+
+  GlobalPrayerLight({
+    required this.countryIso,
+    required this.countryName,
+    required this.addedAt,
+    this.prayCount = 1,
+  });
+}
+
+/// Live prayer lights submitted by users (user's own + received from network).
+final globalPrayerLightsNotifier = ValueNotifier<List<GlobalPrayerLight>>([]);
 
 /// User's saved/downloaded sermons (empty on first launch).
 final savedSermonsNotifier = ValueNotifier<List<SavedSermon>>([]);
