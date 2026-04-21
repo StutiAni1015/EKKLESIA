@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
 import 'book_reader_screen.dart';
 
@@ -15,6 +17,8 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
   String? _selectedCategory;
   final _searchCtrl = TextEditingController();
   String _query = '';
+  final List<_UploadedBook> _uploadedBooks = [];
+  bool _picking = false;
 
   static const _categories = [
     'All', 'Devotional', 'Theology', 'Biography', 'Prayer', 'Christian Living',
@@ -261,6 +265,114 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
             ),
             const SizedBox(height: 12),
 
+            // Uploaded books section
+            if (_uploadedBooks.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    Text('MY BOOKS',
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text('${_uploadedBooks.length}',
+                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 80,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  itemCount: _uploadedBooks.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, i) {
+                    final book = _uploadedBooks[i];
+                    return GestureDetector(
+                      onTap: () => _openUploadedBook(book),
+                      onLongPress: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: const Text('Remove Book'),
+                            content: Text('Remove "${book.name}" from My Books?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  setState(() => _uploadedBooks.removeAt(i));
+                                },
+                                child: const Text('Remove', style: TextStyle(color: Colors.redAccent)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 220,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: borderColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 38, height: 38,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.picture_as_pdf, color: AppColors.primary, size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(book.name,
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: textColor),
+                                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 2),
+                                  Text('PDF · Tap to open',
+                                      style: TextStyle(fontSize: 10, color: subColor)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.open_in_new, size: 14, color: AppColors.primary),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Text('LIBRARY',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+              ),
+            ],
+
             // Book grid
             Expanded(
               child: _filtered.isEmpty
@@ -407,51 +519,89 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
     );
   }
 
+  Future<void> _pickAndUpload() async {
+    if (_picking) return;
+    setState(() => _picking = true);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        allowMultiple: false,
+      );
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      final path = file.path;
+      if (path == null) {
+        _snack('Could not access file path.', error: true);
+        return;
+      }
+      final name = file.name.replaceAll(RegExp(r'\.pdf$', caseSensitive: false), '');
+      setState(() {
+        _uploadedBooks.add(_UploadedBook(name: name, path: path));
+      });
+      _snack('"$name" added to My Books.');
+    } catch (e) {
+      _snack('Failed to pick file: $e', error: true);
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  Future<void> _openUploadedBook(_UploadedBook book) async {
+    final uri = Uri.file(book.path);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      _snack('No PDF viewer found on this device.', error: true);
+    }
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? Colors.redAccent : AppColors.primary,
+      behavior: SnackBarBehavior.floating,
+    ));
+  }
+
   void _showUploadSheet(BuildContext context, bool isDark) {
     final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subColor  = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        padding: EdgeInsets.fromLTRB(
-            24, 16, 24, MediaQuery.of(context).padding.bottom + 32),
+        padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 32),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 40,
-              height: 4,
+              width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(99)),
+            ),
+            Container(
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(99),
+                color: AppColors.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
+              child: const Icon(Icons.upload_file, color: AppColors.primary, size: 28),
             ),
-            Text(
-              'Upload a Book',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: textColor),
-            ),
+            const SizedBox(height: 14),
+            Text('Upload a Book', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
             const SizedBox(height: 8),
             Text(
-              'Import PDF files from your device to read them in the app with all reading customizations.',
+              'Choose a PDF from your device.\nIt will appear in your "My Books" section.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
-                  height: 1.6),
+              style: TextStyle(fontSize: 13, color: subColor, height: 1.6),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -460,24 +610,15 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
               child: ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'PDF upload coming soon! Stay tuned for the next update.'),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                  _pickAndUpload();
                 },
                 icon: const Icon(Icons.folder_open, size: 18),
                 label: const Text('Choose PDF from Files',
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold)),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
               ),
@@ -487,6 +628,12 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
       ),
     );
   }
+}
+
+class _UploadedBook {
+  final String name;
+  final String path;
+  _UploadedBook({required this.name, required this.path});
 }
 
 class Book {
