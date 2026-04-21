@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'add_prayer_request_screen.dart';
+import 'spiritual_focus_mode_screen.dart';
 
 class PrayerHeartbeatScreen extends StatefulWidget {
   const PrayerHeartbeatScreen({super.key});
@@ -372,6 +373,45 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Focus timer button
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const SpiritualFocusModeScreen()),
+                    ),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1E293B)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.timer_outlined,
+                              color: AppColors.primary, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Start Prayer Focus Timer',
+                            style: TextStyle(
+                              color: textColor,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],

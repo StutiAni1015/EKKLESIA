@@ -11,6 +11,7 @@ final authUserIdNotifier = ValueNotifier<String?>( null);
 class ApiService {
   // 127.0.0.1 for iOS simulator; use 10.0.2.2 for Android emulator.
   static const String _base = 'http://127.0.0.1:4000/api';
+  static const String baseUrl = 'http://127.0.0.1:4000';
 
   // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -62,6 +63,51 @@ class ApiService {
     if (body['name'] != null) {
       userNameNotifier.value = (body['name'] as String).split(' ').first;
     }
+    // Load full profile so isPastor, bio, country etc. are available immediately.
+    try {
+      await fetchAndApplyProfile();
+    } catch (e) {
+      // Non-fatal — profile will be refreshed when DashboardScreen / ProfileScreen opens.
+      debugPrint('[ApiService] fetchAndApplyProfile after login failed: $e');
+    }
+  }
+
+  /// Fetches /api/user/profile and writes every field into the session notifiers.
+  /// Safe to call at login and on session restore.
+  static Future<void> fetchAndApplyProfile() async {
+    final data = await getProfile();
+    _applyProfile(data);
+    // If this user is a pastor, load their church ID
+    if (isPastorNotifier.value) {
+      try {
+        final churches = await getMyChurches();
+        final pastored = churches['pastored'] as List<dynamic>? ?? [];
+        if (pastored.isNotEmpty) {
+          final church = pastored.first as Map<String, dynamic>;
+          myChurchIdNotifier.value = church['_id'] as String?;
+          myChurchNotifier.value = ChurchProfile(
+            name: church['name'] as String? ?? '',
+            denomination: church['denomination'] as String? ?? '',
+            location: '${church['city'] ?? ''}, ${church['country'] ?? ''}'.trim().replaceAll(RegExp(r'^,\s*|,\s*$'), ''),
+            description: '',
+            createdAt: DateTime.tryParse(church['createdAt'] as String? ?? '') ?? DateTime.now(),
+          );
+        }
+      } catch (_) {}
+    }
+  }
+
+  /// Writes a profile map (from GET /api/user/profile) into all session notifiers.
+  static void _applyProfile(Map<String, dynamic> data) {
+    final name = data['name'] as String? ?? '';
+    userNameNotifier.value           = name.split(' ').first;
+    userBioNotifier.value            = data['bio'] as String? ?? '';
+    userCountryNotifier.value        = data['country'] as String? ?? 'US';
+    userCountryIsoNotifier.value     = data['countryIso'] as String? ?? 'US';
+    userCityNotifier.value           = data['city'] as String? ?? '';
+    userCurrencyNotifier.value       = data['currency'] as String? ?? 'USD';
+    userCurrencySymbolNotifier.value = data['currencySymbol'] as String? ?? '\$';
+    isPastorNotifier.value           = data['isPastor'] as bool? ?? false;
   }
 
   // ─── user profile ──────────────────────────────────────────────────────────
@@ -103,6 +149,37 @@ class ApiService {
     final body = _decode(r);
     if (r.statusCode != 200) throw body['message'] ?? 'Failed to update profile';
     return body;
+  }
+
+  /// PUT /api/user/change-password
+  static Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final r = await http.put(
+      Uri.parse('$_base/user/change-password'),
+      headers: _headers,
+      body: jsonEncode({'currentPassword': currentPassword, 'newPassword': newPassword}),
+    );
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to change password';
+  }
+
+  /// GET /api/user/privacy — fetch privacy settings
+  static Future<Map<String, dynamic>> getPrivacySettings() async {
+    final r = await http.get(Uri.parse('$_base/user/privacy'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load privacy settings';
+    return _decode(r);
+  }
+
+  /// PUT /api/user/privacy — update privacy settings
+  static Future<Map<String, dynamic>> updatePrivacySettings(Map<String, bool> settings) async {
+    final r = await http.put(
+      Uri.parse('$_base/user/privacy'),
+      headers: _headers,
+      body: jsonEncode(settings),
+    );
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to update privacy settings';
+    return _decode(r);
   }
 
   /// GET /api/user/:id — public profile
@@ -582,5 +659,289 @@ class ApiService {
   static void clearSession() {
     authTokenNotifier.value  = null;
     authUserIdNotifier.value = null;
+  }
+
+  // ─── church management (pastor) ───────────────────────────────────────────
+
+  /// POST /api/church/:id/request-join
+  static Future<void> requestJoinChurch(String churchId) async {
+    final r = await http.post(Uri.parse('$_base/church/$churchId/request-join'), headers: _headers);
+    final body = _decode(r);
+    if (r.statusCode != 200) throw body['message'] ?? 'Failed to submit request';
+  }
+
+  /// GET /api/church/:id/requests
+  static Future<List<dynamic>> getJoinRequests(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church/$churchId/requests'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load requests';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// PATCH /api/church/:id/requests/:reqId/approve
+  static Future<void> approveJoinRequest(String churchId, String reqId) async {
+    final r = await http.patch(Uri.parse('$_base/church/$churchId/requests/$reqId/approve'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to approve';
+  }
+
+  /// PATCH /api/church/:id/requests/:reqId/reject
+  static Future<void> rejectJoinRequest(String churchId, String reqId) async {
+    final r = await http.patch(Uri.parse('$_base/church/$churchId/requests/$reqId/reject'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to reject';
+  }
+
+  /// GET /api/church/:id/members — members with roles
+  static Future<List<dynamic>> getChurchMembers(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church/$churchId/members'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load members';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// GET /api/church/:id/online-status
+  static Future<Map<String, dynamic>> getMemberOnlineStatus(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church/$churchId/online-status'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load status';
+    return _decode(r);
+  }
+
+  /// PATCH /api/church/:id/members/:userId/role
+  static Future<void> setMemberRole(String churchId, String userId, String role) async {
+    final r = await http.patch(
+      Uri.parse('$_base/church/$churchId/members/$userId/role'),
+      headers: _headers,
+      body: jsonEncode({'role': role}),
+    );
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to update role';
+  }
+
+  /// DELETE /api/church/:id/members/:userId
+  static Future<void> removeMember(String churchId, String userId) async {
+    final r = await http.delete(Uri.parse('$_base/church/$churchId/members/$userId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to remove member';
+  }
+
+  /// GET /api/church/:id/events
+  static Future<List<dynamic>> getChurchEvents(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church/$churchId/events'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load events';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// POST /api/church/:id/events
+  static Future<Map<String, dynamic>> createChurchEvent(
+      String churchId, String title, String date,
+      {String description = '', String location = ''}) async {
+    final r = await http.post(
+      Uri.parse('$_base/church/$churchId/events'),
+      headers: _headers,
+      body: jsonEncode({'title': title, 'date': date, 'description': description, 'location': location}),
+    );
+    final body = _decode(r);
+    if (r.statusCode != 201) throw body['message'] ?? 'Failed to create event';
+    return body;
+  }
+
+  /// DELETE /api/church/:id/events/:eventId
+  static Future<void> deleteChurchEvent(String churchId, String eventId) async {
+    final r = await http.delete(Uri.parse('$_base/church/$churchId/events/$eventId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete event';
+  }
+
+  /// POST /api/church/:id/announce
+  static Future<void> sendAnnouncement(String churchId, String title, String message) async {
+    final r = await http.post(
+      Uri.parse('$_base/church/$churchId/announce'),
+      headers: _headers,
+      body: jsonEncode({'title': title, 'message': message}),
+    );
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to send announcement';
+  }
+
+  // ─── church posts ──────────────────────────────────────────────────────────
+
+  /// POST /api/church-posts
+  static Future<Map<String, dynamic>> submitChurchPost(String churchId, String content) async {
+    final r = await http.post(
+      Uri.parse('$_base/church-posts'),
+      headers: _headers,
+      body: jsonEncode({'churchId': churchId, 'content': content}),
+    );
+    final body = _decode(r);
+    if (r.statusCode != 201) throw body['message'] ?? 'Failed to submit post';
+    return body;
+  }
+
+  /// GET /api/church-posts/:churchId
+  static Future<List<dynamic>> getChurchPosts(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church-posts/$churchId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load posts';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// PATCH /api/church-posts/:postId/approve
+  static Future<void> approveChurchPost(String postId) async {
+    final r = await http.patch(Uri.parse('$_base/church-posts/$postId/approve'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to approve post';
+  }
+
+  /// PATCH /api/church-posts/:postId/reject (hard delete)
+  static Future<void> rejectChurchPost(String postId) async {
+    final r = await http.patch(Uri.parse('$_base/church-posts/$postId/reject'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to reject post';
+  }
+
+  /// DELETE /api/church-posts/:postId
+  static Future<void> deleteChurchPost(String postId) async {
+    final r = await http.delete(Uri.parse('$_base/church-posts/$postId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete post';
+  }
+
+  // ─── church live ───────────────────────────────────────────────────────────
+
+  /// POST /api/church/:id/go-live
+  static Future<void> goLive(String churchId, String streamUrl, String liveTitle) async {
+    final r = await http.post(
+      Uri.parse('$_base/church/$churchId/go-live'),
+      headers: _headers,
+      body: jsonEncode({'streamUrl': streamUrl, 'liveTitle': liveTitle}),
+    );
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to go live';
+  }
+
+  /// DELETE /api/church/:id/go-live
+  static Future<void> endLive(String churchId) async {
+    final r = await http.delete(Uri.parse('$_base/church/$churchId/go-live'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to end live';
+  }
+
+  /// GET /api/church/:id/live-status
+  static Future<Map<String, dynamic>> getLiveStatus(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church/$churchId/live-status'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to get live status';
+    return _decode(r);
+  }
+
+  // ─── church lyrics ──────────────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getChurchLyrics(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church-lyrics/$churchId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load lyrics';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> submitChurchLyrics(
+      String churchId, {required String title, String artist = '', required String textContent}) async {
+    final r = await http.post(Uri.parse('$_base/church-lyrics/$churchId'),
+        headers: _headers,
+        body: jsonEncode({'title': title, 'artist': artist, 'textContent': textContent}));
+    if (r.statusCode != 201) throw _decode(r)['message'] ?? 'Failed to submit lyrics';
+    return _decode(r);
+  }
+
+  static Future<Map<String, dynamic>> approveChurchLyrics(String churchId, String lyricsId) async {
+    final r = await http.patch(
+        Uri.parse('$_base/church-lyrics/$churchId/$lyricsId/approve'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to approve';
+    return _decode(r);
+  }
+
+  static Future<void> rejectChurchLyrics(String churchId, String lyricsId) async {
+    final r = await http.patch(
+        Uri.parse('$_base/church-lyrics/$churchId/$lyricsId/reject'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to reject';
+  }
+
+  static Future<void> deleteChurchLyrics(String churchId, String lyricsId) async {
+    final r = await http.delete(
+        Uri.parse('$_base/church-lyrics/$churchId/$lyricsId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete';
+  }
+
+  // ─── church-wide Bible plan ────────────────────────────────────────────────
+
+  /// GET /api/church-plan/:churchId — active plan + caller's completedDays
+  static Future<Map<String, dynamic>> getChurchPlan(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church-plan/$churchId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load plan';
+    return _decode(r);
+  }
+
+  /// POST /api/church-plan/:churchId — pastor creates/replaces the plan
+  static Future<Map<String, dynamic>> setChurchPlan(
+      String churchId, Map<String, dynamic> payload) async {
+    final r = await http.post(Uri.parse('$_base/church-plan/$churchId'),
+        headers: _headers, body: jsonEncode(payload));
+    if (r.statusCode != 201) throw _decode(r)['message'] ?? 'Failed to set plan';
+    return _decode(r);
+  }
+
+  /// PATCH /api/church-plan/:churchId/toggle-day — toggle a day's completion
+  static Future<List<int>> toggleChurchPlanDay(String churchId, int dayNumber) async {
+    final r = await http.patch(Uri.parse('$_base/church-plan/$churchId/toggle-day'),
+        headers: _headers, body: jsonEncode({'dayNumber': dayNumber}));
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to toggle day';
+    final days = (_decode(r)['completedDays'] as List<dynamic>)
+        .map((e) => (e as num).toInt())
+        .toList();
+    return days;
+  }
+
+  /// GET /api/church-plan/:churchId/stats — pastor aggregate stats
+  static Future<Map<String, dynamic>> getChurchPlanStats(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church-plan/$churchId/stats'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load stats';
+    return _decode(r);
+  }
+
+  /// DELETE /api/church-plan/:churchId — pastor removes the active plan
+  static Future<void> deleteChurchPlan(String churchId) async {
+    final r = await http.delete(Uri.parse('$_base/church-plan/$churchId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete plan';
+  }
+
+  // ─── church media (worship hub) ────────────────────────────────────────────
+
+  /// GET /api/church-media/:churchId
+  static Future<List<dynamic>> getChurchMedia(String churchId) async {
+    final r = await http.get(Uri.parse('$_base/church-media/$churchId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load media';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// POST /api/church-media/:churchId — multipart file upload
+  /// [fileTypeOverride] is the explicit type chosen by the user: pdf | image | ppt
+  static Future<Map<String, dynamic>> uploadChurchMedia(
+      String churchId, String filePath, String title, String mimeType,
+      {String? fileTypeOverride}) async {
+    final uri = Uri.parse('$_base/church-media/$churchId');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll({
+        if (authTokenNotifier.value != null)
+          'Authorization': 'Bearer ${authTokenNotifier.value}',
+      })
+      ..fields['title'] = title;
+    if (fileTypeOverride != null) request.fields['fileType'] = fileTypeOverride;
+    request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    final decoded = jsonDecode(body) as Map<String, dynamic>;
+    if (streamed.statusCode != 201) throw decoded['message'] ?? 'Upload failed';
+    return decoded;
+  }
+
+  /// PATCH /api/church-media/:churchId/:mediaId/lyrics — toggle isLyrics
+  static Future<Map<String, dynamic>> toggleChurchMediaLyrics(
+      String churchId, String mediaId) async {
+    final r = await http.patch(
+        Uri.parse('$_base/church-media/$churchId/$mediaId/lyrics'),
+        headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to update';
+    return _decode(r);
+  }
+
+  /// DELETE /api/church-media/:churchId/:mediaId
+  static Future<void> deleteChurchMedia(String churchId, String mediaId) async {
+    final r = await http.delete(
+        Uri.parse('$_base/church-media/$churchId/$mediaId'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete file';
   }
 }

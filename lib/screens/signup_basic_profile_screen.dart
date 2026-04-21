@@ -65,8 +65,6 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
   static const _genders = [
     _GenderOption('male', 'Male'),
     _GenderOption('female', 'Female'),
-    _GenderOption('other', 'Other'),
-    _GenderOption('prefer-not', 'Prefer not to say'),
   ];
 
   @override

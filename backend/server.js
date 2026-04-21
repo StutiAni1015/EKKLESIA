@@ -1,5 +1,6 @@
 const express = require("express");
 const http    = require("http");
+const path    = require("path");
 const { Server } = require("socket.io");
 
 const app    = express();
@@ -12,6 +13,9 @@ connectDB();
 
 // Middleware
 app.use(express.json());
+
+// Serve uploaded files (church media)
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Track connected users: userId → socketId
 const users = {};
@@ -40,6 +44,10 @@ app.use("/api/prayer",        require("./routes/prayerRoutes"));
 app.use("/api/journal",       require("./routes/journalRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/church",        require("./routes/churchRoutes"));
+app.use("/api/church-posts",  require("./routes/churchPostRoutes"));
+app.use("/api/church-media",  require("./routes/churchMediaRoutes"));
+app.use("/api/church-plan",   require("./routes/churchPlanRoutes"));
+app.use("/api/church-lyrics", require("./routes/churchLyricsRoutes"));
 app.use("/api/global-prayer", require("./routes/globalPrayerRoutes"));
 app.use("/api/giving",        require("./routes/givingRoutes"));
 app.use("/api/user",          require("./routes/userRoutes"));

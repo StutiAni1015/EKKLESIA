@@ -6,6 +6,7 @@ import '../data/bible_plan_readings.dart';
 void resetAllAppState() {
   isPastorNotifier.value           = false;
   myChurchNotifier.value           = null;
+  myChurchIdNotifier.value         = null;
   churchPostsNotifier.value        = [];
   membershipRequestsNotifier.value = [];
   hasJoinedChurchNotifier.value    = false;
@@ -23,6 +24,7 @@ void resetAllAppState() {
   faceVerifiedNotifier.value       = false;
   accountVerifiedNotifier.value    = false;
   userNameNotifier.value           = '';
+  userBioNotifier.value            = '';
   userCountryNotifier.value        = 'US';
   userCountryIsoNotifier.value     = 'US';
   userStateNotifier.value          = '';
@@ -45,6 +47,9 @@ final isPastorNotifier = ValueNotifier<bool>(false);
 
 /// The church this pastor created. null = not created yet.
 final myChurchNotifier = ValueNotifier<ChurchProfile?>(null);
+
+/// MongoDB _id of the pastor's church. Used for API calls.
+final myChurchIdNotifier = ValueNotifier<String?>(null);
 
 /// All posts submitted to the pastor's church feed.
 final churchPostsNotifier = ValueNotifier<List<ChurchPost>>([]);
@@ -254,6 +259,7 @@ final registeredEmailsNotifier = ValueNotifier<Set<String>>({});
 /// Set these notifiers from signup / login screens and read them anywhere.
 
 final userNameNotifier = ValueNotifier<String>('');
+final userBioNotifier  = ValueNotifier<String>('');
 final userCountryNotifier = ValueNotifier<String>('US');
 final userCountryIsoNotifier = ValueNotifier<String>('US');  // ISO-3166-1 alpha-2
 final userStateNotifier    = ValueNotifier<String>('');      // state/province name

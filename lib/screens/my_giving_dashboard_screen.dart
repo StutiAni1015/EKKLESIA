@@ -37,8 +37,8 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabGivings),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabGivings),
+      bottomNavigationBar: const AppBottomBar(activeIndex: kTabProfile),
+      floatingActionButton: buildCenterFab(context, activeIndex: kTabProfile),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,

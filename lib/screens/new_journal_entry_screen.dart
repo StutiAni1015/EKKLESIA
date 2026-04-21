@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../service/api_service.dart';
 
 class NewJournalEntryScreen extends StatefulWidget {
   const NewJournalEntryScreen({super.key});
@@ -15,6 +16,7 @@ class _NewJournalEntryScreenState extends State<NewJournalEntryScreen> {
   final _dateOptions = ['Today', 'Yesterday', 'Custom Date'];
   final _availableTags = ['Reflection', 'Prayer', 'Study', 'Gratitude'];
   final _activeTags = {'Reflection'};
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -23,16 +25,26 @@ class _NewJournalEntryScreenState extends State<NewJournalEntryScreen> {
     super.dispose();
   }
 
-  void _save() {
-    if (_titleCtrl.text.trim().isEmpty && _bodyCtrl.text.trim().isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Journal entry saved.'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Navigator.maybePop(context);
+  Future<void> _save() async {
+    final title = _titleCtrl.text.trim();
+    final content = _bodyCtrl.text.trim();
+    if (title.isEmpty && content.isEmpty) return;
+    setState(() => _saving = true);
+    try {
+      await ApiService.createJournal(title: title, content: content);
+      if (!mounted) return;
+      Navigator.pop(context, true); // signal parent to refresh
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -79,17 +91,29 @@ class _NewJournalEntryScreenState extends State<NewJournalEntryScreen> {
                       ),
                     ),
                   ),
-                  TextButton(
-                    onPressed: _save,
-                    child: const Text(
-                      'Save',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
+                  _saving
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        )
+                      : TextButton(
+                          onPressed: _save,
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
                 ],
               ),
             ),

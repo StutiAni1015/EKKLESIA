@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
 import '../service/location_service.dart';
+import 'dashboard_screen.dart';
 
 const _indigo = Color(0xFF4F46E5);
 const _indigoLight = Color(0xFFE0E7FF);
@@ -151,8 +152,10 @@ class _ChurchCreationReviewScreenState
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context)
-                    .popUntil((route) => route.isFirst),
+                onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  (route) => false,
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _indigo,
                   foregroundColor: Colors.white,

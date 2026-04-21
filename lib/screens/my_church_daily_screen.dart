@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
+import '../service/api_service.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'join_a_church_screen.dart';
 import 'following_feed_screen.dart';
@@ -10,6 +13,8 @@ import 'prayer_heartbeat_screen.dart';
 import 'church_events_list_screen.dart';
 import 'member_notification_alert_screen.dart';
 import 'member_facial_scan_screen.dart';
+import 'worship_hub_screen.dart';
+import 'church_plan_screen.dart';
 
 // Dusty rose is the accent for this community screen
 const _rose = Color(0xFFD7A49A);
@@ -218,6 +223,12 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                           ),
                         ),
                       ),
+                      // ── Live banner + Worship Hub ──────────────────────
+                      _LiveAndWorshipBanner(isDark: isDark, subColor: subColor),
+
+                      // ── Church Plan banner ────────────────────────────────
+                      _ChurchPlanBanner(isDark: isDark, subColor: subColor),
+
                       // Daily Blessing
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
@@ -1573,6 +1584,333 @@ class _NavItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+// ── Live banner + Worship Hub shortcut ───────────────────────────────────────
+
+class _LiveAndWorshipBanner extends StatefulWidget {
+  final bool isDark;
+  final Color subColor;
+  const _LiveAndWorshipBanner({required this.isDark, required this.subColor});
+  @override
+  State<_LiveAndWorshipBanner> createState() => _LiveAndWorshipBannerState();
+}
+
+class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
+  bool _isLive = false;
+  String _streamUrl = "";
+  String _liveTitle = "";
+  bool _showWorshipHub = false;
+  String _memberRole = "member";
+
+  static const _worshipRoles = {"worship_leader", "media_team", "choir", "secretary"};
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLiveAndRole();
+  }
+
+  Future<void> _checkLiveAndRole() async {
+    final churchId = myChurchIdNotifier.value;
+    if (churchId == null) return;
+    try {
+      final status = await ApiService.getLiveStatus(churchId);
+      if (mounted) setState(() {
+        _isLive    = status["isLive"] as bool? ?? false;
+        _streamUrl = status["streamUrl"] as String? ?? "";
+        _liveTitle = status["liveTitle"] as String? ?? "";
+      });
+    } catch (_) {}
+    // Determine worship role
+    try {
+      if (churchId.isNotEmpty) {
+        final members = await ApiService.getChurchMembers(churchId);
+        final me = members.cast<Map<String, dynamic>>().firstWhere(
+          (m) => m["_id"] == authUserIdNotifier.value,
+          orElse: () => {},
+        );
+        final role = me["role"] as String? ?? "member";
+        if (mounted) setState(() {
+          _memberRole    = role;
+          _showWorshipHub = _worshipRoles.contains(role) || isPastorNotifier.value;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cardBg = widget.isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final textColor = widget.isDark ? Colors.white : const Color(0xFF1E293B);
+    final churchId = myChurchIdNotifier.value;
+    final churchName = myChurchNotifier.value?.name ?? "";
+
+    if (!_isLive && !_showWorshipHub) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        children: [
+          // LIVE banner
+          if (_isLive && _streamUrl.isNotEmpty)
+            GestureDetector(
+              onTap: () async {
+                final uri = Uri.tryParse(_streamUrl);
+                if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: Colors.white, size: 8),
+                          SizedBox(width: 4),
+                          Text("LIVE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_liveTitle.isEmpty ? "Live Service" : _liveTitle,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
+                          const Text("Your church is live now — tap to join", style: TextStyle(fontSize: 11, color: Colors.white70)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.play_circle_outline, color: Colors.white, size: 22),
+                  ],
+                ),
+              ),
+            ),
+
+          // Worship Hub shortcut
+          if (_showWorshipHub && churchId != null)
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => WorshipHubScreen(
+                    churchId: churchId,
+                    churchName: churchName,
+                    memberRole: _memberRole,
+                  ),
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEC4899).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.queue_music_outlined, color: Color(0xFFEC4899), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Worship Hub",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: textColor)),
+                          Text("Lyrics, slides & media files", style: TextStyle(fontSize: 11, color: widget.subColor)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 18),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Church Plan quick-access banner ──────────────────────────────────────────
+
+class _ChurchPlanBanner extends StatefulWidget {
+  final bool isDark;
+  final Color subColor;
+  const _ChurchPlanBanner({required this.isDark, required this.subColor});
+
+  @override
+  State<_ChurchPlanBanner> createState() => _ChurchPlanBannerState();
+}
+
+class _ChurchPlanBannerState extends State<_ChurchPlanBanner> {
+  Map<String, dynamic>? _plan;
+  List<int> _completedDays = [];
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    final churchId = myChurchIdNotifier.value;
+    if (churchId == null) return;
+    try {
+      final result = await ApiService.getChurchPlan(churchId);
+      if (mounted) {
+        setState(() {
+          _plan = result['plan'] as Map<String, dynamic>?;
+          final raw = result['completedDays'] as List<dynamic>? ?? [];
+          _completedDays = raw.map((e) => (e as num).toInt()).toList();
+          _loaded = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loaded = true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _plan == null) return const SizedBox.shrink();
+
+    final isDark = widget.isDark;
+    final total = (_plan!['days'] as List<dynamic>).length;
+    final completed = _completedDays.length;
+    final pct = total > 0 ? completed / total : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: GestureDetector(
+        onTap: () {
+          final churchId = myChurchIdNotifier.value;
+          final churchName = myChurchNotifier.value?.name ?? 'My Church';
+          if (churchId == null) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChurchPlanScreen(
+                churchId: churchId,
+                churchName: churchName,
+              ),
+            ),
+          ).then((_) => _fetch()); // refresh after returning
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(0.3),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.menu_book,
+                        color: AppColors.primary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Church Reading Plan',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          _plan!['title'] as String? ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              TextStyle(fontSize: 11, color: widget.subColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '$completed/$total',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right,
+                      color: widget.subColor, size: 18),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: pct,
+                  minHeight: 5,
+                  backgroundColor: isDark
+                      ? const Color(0xFF334155)
+                      : const Color(0xFFE2E8F0),
+                  valueColor:
+                      const AlwaysStoppedAnimation(AppColors.primary),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$completed of $total days completed',
+                style: TextStyle(fontSize: 10, color: widget.subColor),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

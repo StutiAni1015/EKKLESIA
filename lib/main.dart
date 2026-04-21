@@ -23,6 +23,8 @@ void main() async {
     authUserIdNotifier.value = saved['userId'];
     userNameNotifier.value   = saved['name'] ?? '';
     homeScreen = const DashboardScreen();
+    // Re-hydrate all profile notifiers (isPastor, bio, country, etc.)
+    try { await ApiService.fetchAndApplyProfile(); } catch (_) {}
   }
 
   runApp(EkklesiaApp(home: homeScreen));

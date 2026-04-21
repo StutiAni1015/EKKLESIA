@@ -2,17 +2,16 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../screens/add_prayer_request_screen.dart';
 import '../screens/bible_books_index_screen.dart';
-import '../screens/create_giving_request_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/my_church_daily_screen.dart';
-import '../screens/my_giving_dashboard_screen.dart';
+import '../screens/lyrics_screen.dart';
 import '../screens/user_profile_screen.dart';
 
 // Active tab index constants
 const kTabHome      = 0;
 const kTabCommunity = 1;
 const kTabBible     = 2; // center FAB slot
-const kTabGivings   = 3;
+const kTabLyrics    = 3;
 const kTabProfile   = 4;
 
 // ── FAB config per tab ────────────────────────────────────────────────────────
@@ -38,26 +37,20 @@ _FabConfig _fabConfigFor(BuildContext context, int activeIndex) {
           MaterialPageRoute(builder: (_) => const AddPrayerRequestScreen()),
         ),
       );
-    case kTabGivings:
+    case kTabLyrics:
       return _FabConfig(
-        icon: Icons.add,
-        label: 'Give',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => const CreateGivingRequestScreen()),
-        ),
+        icon: Icons.lyrics,
+        label: 'Lyrics',
+        onPressed: () {}, // FAB on lyrics screen does nothing
       );
     case kTabProfile:
       return _FabConfig(
         icon: Icons.edit_outlined,
         label: 'Edit',
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Edit profile coming soon!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        ),
+        onPressed: () {
+          // Find the nearest _UserProfileScreenState and open its edit sheet
+          // Instead, just navigate to profile — the edit button is in the AppBar
+        },
       );
     default: // kTabHome and all other screens
       return _FabConfig(
@@ -148,10 +141,10 @@ class AppBottomBar extends StatelessWidget {
           (route) => false,
         );
         break;
-      case kTabGivings:
+      case kTabLyrics:
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MyGivingDashboardScreen()),
+          MaterialPageRoute(builder: (_) => const LyricsScreen()),
           (route) => false,
         );
         break;
@@ -176,7 +169,7 @@ class AppBottomBar extends StatelessWidget {
       const _NavItem(Icons.home_rounded, 'Home'),
       const _NavItem(Icons.people_rounded, 'Community'),
       null, // center FAB slot
-      const _NavItem(Icons.volunteer_activism_rounded, 'Givings'),
+      const _NavItem(Icons.lyrics_rounded, 'Lyrics'),
       const _NavItem(Icons.person_rounded, 'Profile'),
     ];
 

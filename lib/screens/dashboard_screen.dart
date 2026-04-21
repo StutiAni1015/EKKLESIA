@@ -4,7 +4,6 @@ import '../core/user_session.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'plan_checklist_sheet.dart';
 import 'prayer_community_feed_screen.dart';
-import 'my_giving_dashboard_screen.dart';
 import 'daily_bread_check_in_screen.dart';
 import 'discover_plans_screen.dart';
 import 'saved_sermons_screen.dart';
@@ -12,12 +11,12 @@ import 'my_spiritual_journal_screen.dart';
 import 'member_notification_alert_screen.dart';
 import 'church_events_list_screen.dart';
 import 'church_search_results_screen.dart';
-import 'treasury_lock_screen.dart';
 import 'church_committee_hub_screen.dart';
 import 'book_library_screen.dart';
 import 'location_currency_screen.dart';
-import 'global_prayer_map_screen.dart';
+// import 'global_prayer_map_screen.dart'; // temporarily disabled
 import '../widgets/tap_scale.dart';
+import '../service/api_service.dart';
 
 // ─── Palette ────────────────────────────────────────────────────
 const _bgWarm = Color(0xFFFCF9F7);
@@ -44,6 +43,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _unreadCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ensure isPastor and church info are loaded even if the login-time fetch
+    // failed (e.g. token was set but profile fetch threw silently).
+    ApiService.fetchAndApplyProfile().catchError((_) {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,10 +81,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       floatingActionButtonLocation:
           FloatingActionButtonLocation.centerDocked,
     );
-  }
-  @override
-  void initState() {
-    super.initState();
   }
 
   // ─── Header ────────────────────────────────────────────────────
@@ -707,12 +710,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _QuickAction(Icons.favorite, 'Prayer Requests', _roseBg, _dustyRose,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const PrayerCommunityFeedScreen()))),
-      _QuickAction(Icons.public, 'Global Prayer', _blueBg, _babyBlue,
-          () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const GlobalPrayerMapScreen()))),
-      _QuickAction(Icons.featured_play_list, 'My Giving', _blueBg, _babyBlue,
-          () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const MyGivingDashboardScreen()))),
+      // Global Prayer Map — temporarily disabled
+      // _QuickAction(Icons.public, 'Global Prayer', _blueBg, _babyBlue,
+      //     () => Navigator.push(context,
+      //         MaterialPageRoute(builder: (_) => const GlobalPrayerMapScreen()))),
       _QuickAction(Icons.headset, 'Saved Sermons', _nudeBg, _nude,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const SavedSermonsScreen()))),
@@ -722,9 +723,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _QuickAction(Icons.search, 'Find a Church', _blueBg, _babyBlue,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const ChurchSearchResultsScreen()))),
-      _QuickAction(Icons.account_balance, 'Treasury', _nudeBg, _nude,
-          () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const TreasuryLockScreen()))),
       _QuickAction(Icons.how_to_vote, 'Committee Hub', _sageBg, _sage,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const ChurchCommitteeHubScreen()))),
