@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
 
 class AddPrayerRequestScreen extends StatefulWidget {
   const AddPrayerRequestScreen({super.key});
@@ -42,41 +43,50 @@ class _AddPrayerRequestScreenState extends State<AddPrayerRequestScreen> {
     }
 
     setState(() => _isSubmitting = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
 
-      // Add to personal prayer list
-      final prayer = UserPrayer(
-        body: text,
-        isAnonymous: _isAnonymous,
-        addedAt: DateTime.now(),
-      );
-      myPrayerRequestsNotifier.value = [
-        ...myPrayerRequestsNotifier.value,
-        prayer,
-      ];
+    // Add to personal prayer list immediately
+    final prayer = UserPrayer(
+      body: text,
+      isAnonymous: _isAnonymous,
+      addedAt: DateTime.now(),
+    );
+    myPrayerRequestsNotifier.value = [
+      ...myPrayerRequestsNotifier.value,
+      prayer,
+    ];
 
-      // Also submit to church feed for pastor approval (if a church exists)
-      if (myChurchNotifier.value != null) {
-        final name = _isAnonymous ? 'Anonymous' : (userNameNotifier.value.trim().isEmpty ? 'Member' : userNameNotifier.value.trim());
-        final initials = _isAnonymous ? 'AN' : name.split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
-        final post = ChurchPost(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          authorName: name,
-          authorInitials: initials,
-          authorColor: const Color(0xFFB9D1EA),
-          content: text,
-          postedAt: DateTime.now(),
-          status: PostStatus.pending,
-        );
-        churchPostsNotifier.value = [...churchPostsNotifier.value, post];
-      }
+    final churchId = myChurchIdNotifier.value;
 
+    // Submit to church feed backend for pastor approval (if member of a church)
+    if (churchId != null) {
+      final displayText = _isAnonymous ? '[Anonymous] $text' : text;
+      ApiService.submitChurchPost(churchId, displayText).then((_) {
+        // Also mirror in local notifier so the profile badge updates
+        if (mounted) {
+          final name = _isAnonymous ? 'Anonymous' : (userNameNotifier.value.trim().isEmpty ? 'Member' : userNameNotifier.value.trim());
+          final initials = _isAnonymous ? 'AN' : name.split(' ').where((w) => w.isNotEmpty).take(2).map((w) => w[0].toUpperCase()).join();
+          final post = ChurchPost(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            authorName: name,
+            authorInitials: initials,
+            authorColor: const Color(0xFFB9D1EA),
+            content: text,
+            postedAt: DateTime.now(),
+            status: PostStatus.pending,
+          );
+          churchPostsNotifier.value = [...churchPostsNotifier.value, post];
+        }
+      }).catchError((_) {
+        // Non-fatal: local state already updated; backend sync failed silently
+      });
+    }
+
+    if (mounted) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            myChurchNotifier.value != null
+            churchId != null
                 ? 'Your post is pending pastor approval.'
                 : 'Prayer request posted to the community.',
           ),
@@ -85,7 +95,7 @@ class _AddPrayerRequestScreenState extends State<AddPrayerRequestScreen> {
         ),
       );
       Navigator.maybePop(context, prayer);
-    });
+    }
   }
 
   @override

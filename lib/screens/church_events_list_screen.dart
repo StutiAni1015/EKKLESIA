@@ -28,92 +28,8 @@ class _ChurchEventsListScreenState
 
   static const _filters = ['All', 'This Week', 'This Month', 'Free'];
 
-  static const _events = [
-    _Event(
-      title: 'Sunday Worship Service',
-      date: 'Sun, Mar 23',
-      time: '9:00 AM – 11:30 AM',
-      location: 'Main Sanctuary',
-      category: 'Worship',
-      categoryColor: sage,
-      gradientColors: [Color(0xFFD3E8D7), Color(0xFFB0C4B1)],
-      iconColor: Color(0xFF4A7C59),
-      isFree: true,
-      isThisWeek: true,
-      isThisMonth: true,
-      spots: null,
-    ),
-    _Event(
-      title: 'Youth Camp Registration',
-      date: 'Fri, Mar 28',
-      time: '4:00 PM – 6:00 PM',
-      location: 'Fellowship Hall',
-      category: 'Youth',
-      categoryColor: babyBlue,
-      gradientColors: [Color(0xFFCFE2EF), Color(0xFFB9CFDF)],
-      iconColor: Color(0xFF2B6CB0),
-      isFree: false,
-      isThisWeek: true,
-      isThisMonth: true,
-      spots: 48,
-    ),
-    _Event(
-      title: 'Community Prayer Night',
-      date: 'Wed, Mar 26',
-      time: '7:00 PM – 9:00 PM',
-      location: 'Prayer Room',
-      category: 'Prayer',
-      categoryColor: dustyRose,
-      gradientColors: [Color(0xFFEDD6DC), Color(0xFFD4A5A5)],
-      iconColor: Color(0xFF9B4D6A),
-      isFree: true,
-      isThisWeek: true,
-      isThisMonth: true,
-      spots: null,
-    ),
-    _Event(
-      title: 'Marriage Enrichment Workshop',
-      date: 'Sat, Apr 5',
-      time: '10:00 AM – 3:00 PM',
-      location: 'Conference Room B',
-      category: 'Workshop',
-      categoryColor: Color(0xFFF59E0B),
-      gradientColors: [Color(0xFFFEF3C7), Color(0xFFFDE68A)],
-      iconColor: Color(0xFFB45309),
-      isFree: false,
-      isThisWeek: false,
-      isThisMonth: true,
-      spots: 20,
-    ),
-    _Event(
-      title: 'Baptism Sunday',
-      date: 'Sun, Apr 13',
-      time: '11:00 AM',
-      location: 'Main Sanctuary',
-      category: 'Sacrament',
-      categoryColor: AppColors.primary,
-      gradientColors: [Color(0xFFFDE8DF), Color(0xFFF5C5B0)],
-      iconColor: Color(0xFFEC5B13),
-      isFree: true,
-      isThisWeek: false,
-      isThisMonth: true,
-      spots: null,
-    ),
-    _Event(
-      title: 'Women\'s Retreat',
-      date: 'Fri–Sun, Apr 18–20',
-      time: 'Full weekend',
-      location: 'Serene Valley Retreat',
-      category: 'Retreat',
-      categoryColor: sage,
-      gradientColors: [Color(0xFFD3E8D7), Color(0xFFB0C4B1)],
-      iconColor: Color(0xFF4A7C59),
-      isFree: false,
-      isThisWeek: false,
-      isThisMonth: false,
-      spots: 30,
-    ),
-  ];
+  // Events are created by church leaders — no hardcoded events.
+  static const List<_Event> _events = [];
 
   List<_Event> get _filtered {
     switch (_filterIndex) {
@@ -226,12 +142,23 @@ class _ChurchEventsListScreenState
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.event_busy,
-                          size: 40, color: subColor),
-                      const SizedBox(height: 10),
-                      Text('No events in this filter',
-                          style: TextStyle(
-                              color: subColor, fontSize: 13)),
+                      Icon(Icons.event_outlined,
+                          size: 56, color: subColor.withOpacity(0.3)),
+                      const SizedBox(height: 14),
+                      Text(
+                        'No Events Yet',
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: textColor),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Events created by your church\nwill appear here.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: subColor, fontSize: 13, height: 1.5),
+                      ),
                     ],
                   ),
                 )

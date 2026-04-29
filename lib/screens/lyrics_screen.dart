@@ -7,9 +7,6 @@ import '../widgets/app_bottom_bar.dart';
 
 const kTabLyrics = 3; // slot in bottom nav
 
-// Roles that can manage lyrics
-const _managerRoles = {'worship_leader', 'pastor'};
-
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
 
@@ -26,10 +23,19 @@ class _LyricsScreenState extends State<LyricsScreen>
   String _search = '';
   final _searchCtrl = TextEditingController();
 
+  // Roles that can upload/add lyrics
+  static const _uploadRoles = {
+    'pastor', 'worship_leader', 'choir', 'media_team',
+  };
+
+  bool get _canUpload =>
+      isPastorNotifier.value ||
+      _uploadRoles.contains(userMemberRoleNotifier.value);
+
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 2, vsync: this);
+    _tab = TabController(length: 1, vsync: this);
     _load();
   }
 
@@ -57,14 +63,10 @@ class _LyricsScreenState extends State<LyricsScreen>
     }
   }
 
-  bool get _canManage =>
-      isPastorNotifier.value; // also checked by memberRole fetched separately
+  bool get _canManage => isPastorNotifier.value;
 
   List<Map<String, dynamic>> get _approved =>
       _all.where((l) => l['isApproved'] == true).toList();
-
-  List<Map<String, dynamic>> get _pending =>
-      _all.where((l) => l['isApproved'] != true).toList();
 
   List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> list) {
     if (_search.isEmpty) return list;
@@ -74,48 +76,6 @@ class _LyricsScreenState extends State<LyricsScreen>
       final artist = (l['artist'] as String? ?? '').toLowerCase();
       return title.contains(q) || artist.contains(q);
     }).toList();
-  }
-
-  Future<void> _approve(Map<String, dynamic> l) async {
-    final churchId = myChurchIdNotifier.value;
-    if (churchId == null) return;
-    try {
-      await ApiService.approveChurchLyrics(churchId, l['_id']);
-      _snack('"${l['title']}" approved!');
-      await _load();
-    } catch (e) {
-      _snack('$e', error: true);
-    }
-  }
-
-  Future<void> _reject(Map<String, dynamic> l) async {
-    final churchId = myChurchIdNotifier.value;
-    if (churchId == null) return;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Remove Lyrics'),
-        content: Text('Remove "${l['title']}"?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child:
-                const Text('Remove', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await ApiService.rejectChurchLyrics(churchId, l['_id']);
-      _snack('"${l['title']}" removed.', error: false);
-      await _load();
-    } catch (e) {
-      _snack('$e', error: true);
-    }
   }
 
   Future<void> _delete(Map<String, dynamic> l) async {
@@ -202,7 +162,6 @@ class _LyricsScreenState extends State<LyricsScreen>
     final borderColor =
         isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
-    final pending = _pending;
     final churchId = myChurchIdNotifier.value;
 
     return Scaffold(
@@ -241,8 +200,8 @@ class _LyricsScreenState extends State<LyricsScreen>
                           ],
                         ),
                       ),
-                      // Add button (any member can submit; worship leader auto-approves)
-                      if (churchId != null)
+                      // Add button: choir, media team, worship leader, pastor only
+                      if (churchId != null && _canUpload)
                         GestureDetector(
                           onTap: _openAddSheet,
                           child: Container(
@@ -306,40 +265,15 @@ class _LyricsScreenState extends State<LyricsScreen>
                   ),
                   const SizedBox(height: 8),
 
-                  // Tabs
+                  // Single tab
                   TabBar(
                     controller: _tab,
                     labelColor: const Color(0xFFEC4899),
                     unselectedLabelColor: subColor,
                     indicatorColor: const Color(0xFFEC4899),
                     indicatorWeight: 2,
-                    tabs: [
-                      const Tab(text: 'All Songs'),
-                      if (_canManage && pending.isNotEmpty)
-                        Tab(
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Pending'),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEC4899),
-                                  borderRadius: BorderRadius.circular(99),
-                                ),
-                                child: Text('${pending.length}',
-                                    style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        const Tab(text: 'Pending'),
+                    tabs: const [
+                      Tab(text: 'All Songs'),
                     ],
                   ),
                 ],
@@ -353,7 +287,7 @@ class _LyricsScreenState extends State<LyricsScreen>
                   : TabBarView(
                       controller: _tab,
                       children: [
-                        // Tab 0: Approved songs
+                        // All approved songs (members view-only; owners/pastors can delete)
                         _SongList(
                           songs: _filtered(_approved),
                           loading: _loading,
@@ -366,25 +300,10 @@ class _LyricsScreenState extends State<LyricsScreen>
                           emptyLabel: _search.isNotEmpty
                               ? 'No songs match "$_search"'
                               : 'No lyrics yet',
-                          emptySubLabel: 'Tap "Add Lyrics" to submit a song.',
+                          emptySubLabel: _canUpload
+                              ? 'Tap "Add Lyrics" to submit a song.'
+                              : 'Your church worship team will add songs here.',
                           onRefresh: _load,
-                        ),
-
-                        // Tab 1: Pending approval
-                        _SongList(
-                          songs: _filtered(_pending),
-                          loading: _loading,
-                          isDark: isDark,
-                          textColor: textColor,
-                          subColor: subColor,
-                          canManage: _canManage,
-                          onTap: _openViewer,
-                          onApprove: _approve,
-                          onDelete: _reject,
-                          emptyLabel: 'No pending submissions',
-                          emptySubLabel: '',
-                          onRefresh: _load,
-                          isPendingTab: true,
                         ),
                       ],
                     ),
@@ -422,9 +341,7 @@ class _SongList extends StatelessWidget {
   final bool isDark;
   final Color textColor, subColor;
   final bool canManage;
-  final bool isPendingTab;
   final ValueChanged<Map<String, dynamic>> onTap;
-  final Future<void> Function(Map<String, dynamic>)? onApprove;
   final Future<void> Function(Map<String, dynamic>) onDelete;
   final String emptyLabel, emptySubLabel;
   final Future<void> Function() onRefresh;
@@ -437,12 +354,10 @@ class _SongList extends StatelessWidget {
     required this.subColor,
     required this.canManage,
     required this.onTap,
-    this.onApprove,
     required this.onDelete,
     required this.emptyLabel,
     required this.emptySubLabel,
     required this.onRefresh,
-    this.isPendingTab = false,
   });
 
   @override
@@ -498,11 +413,7 @@ class _SongList extends StatelessWidget {
               decoration: BoxDecoration(
                 color: cardBg,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: isPendingTab
-                      ? const Color(0xFFF59E0B).withOpacity(0.3)
-                      : borderColor,
-                ),
+                border: Border.all(color: borderColor),
               ),
               child: Row(
                 children: [
@@ -587,21 +498,7 @@ class _SongList extends StatelessWidget {
                   ),
 
                   // Actions
-                  if (isPendingTab && canManage) ...[
-                    IconButton(
-                      icon: const Icon(Icons.check_circle_outline,
-                          color: Color(0xFF10B981), size: 22),
-                      tooltip: 'Approve',
-                      onPressed: () => onApprove?.call(l),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.cancel_outlined,
-                          color: Colors.redAccent, size: 22),
-                      tooltip: 'Reject',
-                      onPressed: () => onDelete(l),
-                    ),
-                  ] else if (!isPendingTab &&
-                      (isOwner || canManage)) ...[
+                  if (isOwner || canManage) ...[
                     IconButton(
                       icon: const Icon(Icons.delete_outline,
                           color: Colors.redAccent, size: 18),

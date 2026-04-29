@@ -81,6 +81,7 @@ class _CreateChurchScreenState extends State<CreateChurchScreen> {
       createdAt: DateTime.now(),
     );
     isPastorNotifier.value = true;
+    userMemberRoleNotifier.value = 'pastor';
 
     setState(() => _saving = false);
     if (!mounted) return;

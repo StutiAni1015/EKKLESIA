@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const http    = require("http");
 const path    = require("path");
@@ -51,6 +52,9 @@ app.use("/api/church-lyrics", require("./routes/churchLyricsRoutes"));
 app.use("/api/global-prayer", require("./routes/globalPrayerRoutes"));
 app.use("/api/giving",        require("./routes/givingRoutes"));
 app.use("/api/user",          require("./routes/userRoutes"));
+app.use("/api/companion",     require("./routes/companionRoutes"));
+app.use("/api/pastor",        require("./routes/pastorCertificationRoutes"));
+app.use("/api/kids",          require("./routes/kidsRoutes"));
 
 // Protected test route
 const protect = require("./middleware/authMiddleware");

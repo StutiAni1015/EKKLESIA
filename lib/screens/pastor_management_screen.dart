@@ -29,6 +29,8 @@ class _PastorManagementScreenState extends State<PastorManagementScreen>
   Map<String, bool> _onlineStatus = {};
   List<Map<String, dynamic>> _events = [];
   List<Map<String, dynamic>> _posts = [];
+  List<Map<String, dynamic>> _announcements = [];
+  bool _loadingAnnouncements = false;
 
   // Church plan
   Map<String, dynamic>? _activePlan;
@@ -70,17 +72,19 @@ class _PastorManagementScreenState extends State<PastorManagementScreen>
       _loadPosts(),
       _loadLiveStatus(),
       _loadPlan(),
+      _loadAnnouncements(),
     ]);
   }
 
   Future<void> _loadTab(int i) async {
     switch (i) {
-      case 0: await _loadRequests();    break;
-      case 1: await _loadMembers();     break;
-      case 2: await _loadEvents();      break;
-      case 4: await _loadPosts();       break;
-      case 5: await _loadLiveStatus();  break;
-      case 6: await _loadPlan();        break;
+      case 0: await _loadRequests();       break;
+      case 1: await _loadMembers();        break;
+      case 2: await _loadEvents();         break;
+      case 3: await _loadAnnouncements();  break;
+      case 4: await _loadPosts();          break;
+      case 5: await _loadLiveStatus();     break;
+      case 6: await _loadPlan();           break;
     }
   }
 
@@ -143,6 +147,22 @@ class _PastorManagementScreenState extends State<PastorManagementScreen>
       if (mounted) setState(() => _events = list.cast<Map<String, dynamic>>());
     } catch (_) {} finally {
       if (mounted) setState(() => _loadingEvents = false);
+    }
+  }
+
+  Future<void> _loadAnnouncements() async {
+    setState(() => _loadingAnnouncements = true);
+    try {
+      final all = await ApiService.getNotifications();
+      final filtered = all
+          .cast<Map<String, dynamic>>()
+          .where((n) =>
+              n['type'] == 'announcement' &&
+              n['church']?.toString() == widget.churchId)
+          .toList();
+      if (mounted) setState(() => _announcements = filtered);
+    } catch (_) {} finally {
+      if (mounted) setState(() => _loadingAnnouncements = false);
     }
   }
 
@@ -413,11 +433,11 @@ class _PastorManagementScreenState extends State<PastorManagementScreen>
                     isScrollable: true,
                     tabAlignment: TabAlignment.start,
                     tabs: [
-                      _BadgeTab(label: 'Requests', badge: pendingReqs),
+                      _BadgeTab(label: 'Join Requests', badge: pendingReqs),
                       const Tab(text: 'Members'),
                       const Tab(text: 'Events'),
                       const Tab(text: 'Announce'),
-                      _BadgeTab(label: 'Posts', badge: pendingPosts),
+                      _BadgeTab(label: 'Post Requests', badge: pendingPosts),
                       Tab(
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -503,7 +523,12 @@ class _PastorManagementScreenState extends State<PastorManagementScreen>
                     cardBg: cardBg,
                     borderColor: borderColor,
                     isDark: isDark,
-                    onSend: _sendAnnouncement,
+                    history: _announcements,
+                    historyLoading: _loadingAnnouncements,
+                    onSend: (title, msg) async {
+                      await _sendAnnouncement(title, msg);
+                      await _loadAnnouncements();
+                    },
                   ),
 
                   // ── Tab 4: Posts ──────────────────────────────────────────
@@ -1009,6 +1034,8 @@ class _AnnounceTab extends StatefulWidget {
   final int memberCount;
   final Color textColor, subColor, cardBg, borderColor;
   final bool isDark;
+  final List<Map<String, dynamic>> history;
+  final bool historyLoading;
   final Future<void> Function(String title, String message) onSend;
 
   const _AnnounceTab({
@@ -1018,6 +1045,8 @@ class _AnnounceTab extends StatefulWidget {
     required this.cardBg,
     required this.borderColor,
     required this.isDark,
+    required this.history,
+    required this.historyLoading,
     required this.onSend,
   });
 
@@ -1132,9 +1161,93 @@ class _AnnounceTabState extends State<_AnnounceTab> {
                   style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ),
           ),
+
+          const SizedBox(height: 32),
+          // ── History ──────────────────────────────────────────────────────────
+          Row(
+            children: [
+              const Icon(Icons.history_rounded, size: 16, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text('ANNOUNCEMENT HISTORY',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0, color: widget.subColor)),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          if (widget.historyLoading)
+            const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          else if (widget.history.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: widget.cardBg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: widget.borderColor),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.campaign_outlined, size: 32, color: widget.subColor),
+                  const SizedBox(height: 8),
+                  Text('No announcements sent yet',
+                      style: TextStyle(fontSize: 13, color: widget.subColor, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            )
+          else
+            ...widget.history.map((n) {
+              final title = n['title'] as String? ?? '';
+              final msg   = n['message'] as String? ?? '';
+              final createdAt = n['createdAt'] as String?;
+              final dt = createdAt != null ? DateTime.tryParse(createdAt) : null;
+              final timeStr = dt != null ? _formatDate(dt) : '';
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: widget.cardBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: widget.borderColor),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.campaign_rounded, size: 16, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(title,
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: widget.textColor)),
+                        ),
+                        Text(timeStr, style: TextStyle(fontSize: 11, color: widget.subColor)),
+                      ],
+                    ),
+                    if (msg.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(msg,
+                          style: TextStyle(fontSize: 13, color: widget.subColor, height: 1.4),
+                          maxLines: 3, overflow: TextOverflow.ellipsis),
+                    ],
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime dt) {
+    final now  = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inSeconds < 60)  return 'Just now';
+    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
+    if (diff.inHours   < 24)  return '${diff.inHours}h ago';
+    if (diff.inDays    < 7)   return '${diff.inDays}d ago';
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 }
 

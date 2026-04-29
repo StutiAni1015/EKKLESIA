@@ -5,9 +5,12 @@ import '../data/bible_plan_readings.dart';
 /// Call this at app launch to guarantee a fresh state every time.
 void resetAllAppState() {
   isPastorNotifier.value           = false;
+  userMemberRoleNotifier.value     = 'member';
   myChurchNotifier.value           = null;
   myChurchIdNotifier.value         = null;
   churchPostsNotifier.value        = [];
+  communityFeedNotifier.value      = [];
+  kidsModeNotifier.value           = false;
   membershipRequestsNotifier.value = [];
   hasJoinedChurchNotifier.value    = false;
   myPrayerRequestsNotifier.value   = [];
@@ -32,6 +35,8 @@ void resetAllAppState() {
   userCityNotifier.value           = '';
   userCurrencyNotifier.value       = 'USD';
   userCurrencySymbolNotifier.value = '\$';
+  userLanguageNotifier.value       = 'English';
+  userLanguageCodeNotifier.value   = 'en';
   signupFullNameNotifier.value     = '';
   signupEmailNotifier.value        = '';
   userLatNotifier.value            = null;   // GPS for church proximity only
@@ -45,6 +50,11 @@ void resetAllAppState() {
 /// Whether the current user is a pastor (set when they create a church).
 final isPastorNotifier = ValueNotifier<bool>(false);
 
+/// The current user's role in their church (e.g. 'pastor', 'member', 'choir',
+/// 'worship_leader', 'media_team', 'committee', 'treasurer', 'secretary').
+/// Updated whenever the app learns the member's role from the backend.
+final userMemberRoleNotifier = ValueNotifier<String>('member');
+
 /// The church this pastor created. null = not created yet.
 final myChurchNotifier = ValueNotifier<ChurchProfile?>(null);
 
@@ -53,6 +63,12 @@ final myChurchIdNotifier = ValueNotifier<String?>(null);
 
 /// All posts submitted to the pastor's church feed.
 final churchPostsNotifier = ValueNotifier<List<ChurchPost>>([]);
+
+/// Community feed: prayers, bible verses, and events posted by members.
+final communityFeedNotifier = ValueNotifier<List<CommunityFeedItem>>([]);
+
+/// Toggle between Kids Mode and Normal Mode.
+final kidsModeNotifier = ValueNotifier<bool>(false);
 
 /// Membership join requests awaiting pastor approval.
 final membershipRequestsNotifier = ValueNotifier<List<MembershipRequest>>([]);
@@ -112,6 +128,42 @@ class ChurchPost {
     required this.content,
     required this.postedAt,
     this.status = PostStatus.pending,
+  });
+}
+
+// ── Community feed (prayers + bible verses + events) ─────────────────────────
+
+enum FeedItemType { prayer, bibleVerse, event }
+
+class CommunityFeedItem {
+  final String id;
+  final FeedItemType type;
+  final String authorName;
+  final String authorInitials;
+  final Color authorColor;
+  final DateTime postedAt;
+  final String content;      // prayer body / verse text / event description
+  final String? reference;   // bible reference, e.g. "John 3:16"
+  final String? eventTitle;
+  final String? eventDate;
+  final String? eventTime;
+  final String? eventLocation;
+  int prayCount;
+
+  CommunityFeedItem({
+    required this.id,
+    required this.type,
+    required this.authorName,
+    required this.authorInitials,
+    required this.authorColor,
+    required this.postedAt,
+    required this.content,
+    this.reference,
+    this.eventTitle,
+    this.eventDate,
+    this.eventTime,
+    this.eventLocation,
+    this.prayCount = 0,
   });
 }
 
@@ -267,6 +319,8 @@ final userStateIsoNotifier = ValueNotifier<String>('');      // state ISO code
 final userCityNotifier     = ValueNotifier<String>('');      // city name
 final userCurrencyNotifier = ValueNotifier<String>('USD');
 final userCurrencySymbolNotifier = ValueNotifier<String>('\$');
+final userLanguageNotifier = ValueNotifier<String>('English');
+final userLanguageCodeNotifier = ValueNotifier<String>('en');
 
 /// Shared list of prayer requests the current user has posted.
 final myPrayerRequestsNotifier = ValueNotifier<List<UserPrayer>>([]);

@@ -469,6 +469,57 @@ class ApiService {
     }
   }
 
+  // ─── spiritual companion ────────────────────────────────────────────────────
+
+  /// POST /api/companion/chat
+  /// [messages] is the full conversation history:
+  ///   [{'role': 'user', 'content': '...'}, {'role': 'assistant', 'content': '...'}, ...]
+  /// Returns the AI reply string.
+  static Future<String> askCompanion(
+      List<Map<String, String>> messages) async {
+    final r = await http.post(
+      Uri.parse('$_base/companion/chat'),
+      headers: _headers,
+      body: jsonEncode({'messages': messages}),
+    );
+    final body = _decode(r);
+    if (r.statusCode != 200) {
+      throw body['message'] ?? 'Spiritual Companion unavailable';
+    }
+    return body['reply'] as String;
+  }
+
+  // ─── pastor certification ─────────────────────────────────────────────────
+
+  /// POST /api/pastor/certification — upload pastoral degree / certification doc
+  static Future<Map<String, dynamic>> uploadPastorCertification(
+      String filePath, {String institute = ''}) async {
+    final uri = Uri.parse('$_base/pastor/certification');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll({
+        if (authTokenNotifier.value != null)
+          'Authorization': 'Bearer ${authTokenNotifier.value}',
+      })
+      ..fields['institute'] = institute;
+    request.files.add(await http.MultipartFile.fromPath('certificate', filePath));
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    final decoded = jsonDecode(body) as Map<String, dynamic>;
+    if (streamed.statusCode != 200) throw decoded['message'] ?? 'Upload failed';
+    return decoded;
+  }
+
+  /// GET /api/pastor/certification — fetch certification status for current user
+  static Future<Map<String, dynamic>> getPastorCertification() async {
+    final r = await http.get(
+      Uri.parse('$_base/pastor/certification'),
+      headers: _headers,
+    );
+    final body = _decode(r);
+    if (r.statusCode != 200) throw body['message'] ?? 'Failed to fetch certification';
+    return body;
+  }
+
   // ─── church ────────────────────────────────────────────────────────────────
 
   /// POST /api/church — create a new church
@@ -943,5 +994,85 @@ class ApiService {
     final r = await http.delete(
         Uri.parse('$_base/church-media/$churchId/$mediaId'), headers: _headers);
     if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete file';
+  }
+
+  // ─── kids mode ─────────────────────────────────────────────────────────────
+
+  /// GET /api/kids/verify-parent/status
+  static Future<Map<String, dynamic>> getParentIDStatus() async {
+    final r = await http.get(Uri.parse('$_base/kids/verify-parent/status'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to fetch status';
+    return _decode(r);
+  }
+
+  /// POST /api/kids/verify-parent  (multipart)
+  static Future<Map<String, dynamic>> uploadParentID(String filePath) async {
+    final uri     = Uri.parse('$_base/kids/verify-parent');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers.addAll({
+        if (authTokenNotifier.value != null)
+          'Authorization': 'Bearer ${authTokenNotifier.value}',
+      });
+    request.files.add(await http.MultipartFile.fromPath('idDocument', filePath));
+    final streamed = await request.send();
+    final body     = jsonDecode(await streamed.stream.bytesToString()) as Map<String, dynamic>;
+    if (streamed.statusCode != 200 && streamed.statusCode != 201) {
+      throw body['message'] ?? 'Upload failed';
+    }
+    return body;
+  }
+
+  /// GET /api/kids/profiles
+  static Future<List<dynamic>> getKidsProfiles() async {
+    final r = await http.get(Uri.parse('$_base/kids/profiles'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to load profiles';
+    return jsonDecode(r.body) as List<dynamic>;
+  }
+
+  /// POST /api/kids/profiles
+  static Future<Map<String, dynamic>> createKidsProfile({
+    required String name,
+    required int age,
+    required String avatarEmoji,
+    required String avatarColor,
+  }) async {
+    final r = await http.post(
+      Uri.parse('$_base/kids/profiles'),
+      headers: _headers,
+      body: jsonEncode({'name': name, 'age': age, 'avatarEmoji': avatarEmoji, 'avatarColor': avatarColor}),
+    );
+    final body = _decode(r);
+    if (r.statusCode != 200 && r.statusCode != 201) throw body['message'] ?? 'Failed to create profile';
+    return body;
+  }
+
+  /// PATCH /api/kids/profiles/:id
+  static Future<Map<String, dynamic>> updateKidsProfile(String id, Map<String, dynamic> data) async {
+    final r = await http.patch(
+      Uri.parse('$_base/kids/profiles/$id'),
+      headers: _headers,
+      body: jsonEncode(data),
+    );
+    final body = _decode(r);
+    if (r.statusCode != 200) throw body['message'] ?? 'Failed to update profile';
+    return body;
+  }
+
+  /// DELETE /api/kids/profiles/:id
+  static Future<void> deleteKidsProfile(String id) async {
+    final r = await http.delete(Uri.parse('$_base/kids/profiles/$id'), headers: _headers);
+    if (r.statusCode != 200) throw _decode(r)['message'] ?? 'Failed to delete profile';
+  }
+
+  /// GET /api/kids/daily-quiz — AI-generated questions; returns null on failure
+  static Future<List<Map<String, dynamic>>?> fetchDailyQuiz() async {
+    try {
+      final r = await http.get(Uri.parse('$_base/kids/daily-quiz'), headers: _headers);
+      if (r.statusCode == 200) {
+        final body = _decode(r);
+        return (body['questions'] as List).cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return null;
   }
 }

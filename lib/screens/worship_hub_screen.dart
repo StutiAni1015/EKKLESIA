@@ -33,9 +33,9 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
   bool _uploading = false;
   String _activeFilter = 'All';
 
-  // Tabs: Files (All/PDF/Images/Slides) + Lyrics
-  static const _filterLabels = ['All', 'PDF', 'Images', 'Slides'];
-  static const _filterValues = ['All', 'pdf', 'image', 'ppt'];
+  // Tabs: Files (All/PDF/Images/Slides/Videos) + Lyrics
+  static const _filterLabels = ['All', 'PDF', 'Images', 'Slides', 'Videos'];
+  static const _filterValues = ['All', 'pdf', 'image', 'ppt', 'video'];
 
   @override
   void initState() {
@@ -66,7 +66,7 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
   Future<void> _pickAndUpload() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'ppt', 'pptx'],
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'ppt', 'pptx', 'mp4', 'mov', 'm4v'],
     );
     if (result == null || result.files.isEmpty) return;
     final picked = result.files.first;
@@ -175,6 +175,16 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
                 isDark: isDark,
                 onTap: () => Navigator.pop(ctx, 'ppt'),
               ),
+              const SizedBox(height: 10),
+              _TypeOption(
+                label: 'Video (MP4 / MOV)',
+                subtitle: 'Recorded service or worship video',
+                icon: Icons.videocam_outlined,
+                color: const Color(0xFF8B5CF6),
+                value: 'video',
+                isDark: isDark,
+                onTap: () => Navigator.pop(ctx, 'video'),
+              ),
             ],
           ),
         );
@@ -225,23 +235,28 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
 
   Future<void> _openFile(Map<String, dynamic> file) async {
     final fileType = file['fileType'] as String? ?? 'other';
+    final url = '${ApiService.baseUrl}${file['fileUrl']}';
     if (fileType == 'image') {
-      // Show image inline in a full-screen viewer
-      final url = '${ApiService.baseUrl}${file['fileUrl']}';
       if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => _ImageLyricsViewer(
-            imageUrl: url,
-            title: file['title'] as String? ?? 'Lyrics',
-          ),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => _ImageLyricsViewer(
+          imageUrl: url, title: file['title'] as String? ?? 'Lyrics'),
+      ));
+      return;
+    }
+    if (fileType == 'video') {
+      // Open video in-app webview so it plays without leaving the app
+      final uri = Uri.tryParse(url);
+      if (uri == null) return;
+      try {
+        final launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+        if (!launched) await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (_) {
+        _snack('Cannot open video', color: Colors.redAccent);
+      }
       return;
     }
     // PDFs and PPTs: open externally
-    final url = '${ApiService.baseUrl}${file['fileUrl']}';
     final uri = Uri.tryParse(url);
     if (uri == null) return;
     try {
@@ -269,6 +284,10 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
 
   bool get _canUpload =>
       isPastorNotifier.value || _worshipRoles.contains(widget.memberRole);
+
+  // All members can write/save their own lyrics; only worship leader/pastor can
+  // manage which files appear in the shared Lyrics tab.
+  bool get _canWriteLyrics => true;
 
   bool get _canManageLyrics =>
       isPastorNotifier.value || widget.memberRole == 'worship_leader';
@@ -667,52 +686,252 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
 
   Widget _buildLyricsTab(bool isDark, Color textColor, Color subColor) {
     final lyrics = _lyricsFiles;
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     if (_loading) return const Center(child: CircularProgressIndicator());
 
-    if (lyrics.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.lyrics_outlined,
-                size: 56, color: subColor.withOpacity(0.25)),
-            const SizedBox(height: 16),
-            Text('No Lyrics Yet',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                'Worship leaders can promote any file to the Lyrics tab by tapping the ♪ icon.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return RefreshIndicator(
       onRefresh: _loadFiles,
-      child: ListView.builder(
-        padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(context).padding.bottom + 110),
-        itemCount: lyrics.length,
-        itemBuilder: (_, i) {
-          final file = lyrics[i];
-          final fileType = file['fileType'] as String? ?? 'other';
-          return _LyricsCard(
-            file: file,
-            fileType: fileType,
-            isDark: isDark,
-            textColor: textColor,
-            subColor: subColor,
-            canManage: _canManageLyrics,
-            onView: () => _openFile(file),
-            onRemove: () => _toggleLyrics(file),
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).padding.bottom + 110),
+        children: [
+          // Write Lyrics button (available to all members)
+          if (_canWriteLyrics) ...[
+            GestureDetector(
+              onTap: () => _showWriteLyricsSheet(isDark),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFEC4899).withOpacity(0.4),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEC4899).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.edit_note, color: Color(0xFFEC4899), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Write Lyrics',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor)),
+                          Text('Type song lyrics with section labels',
+                              style: TextStyle(fontSize: 12, color: subColor)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFFEC4899)),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Divider(color: borderColor, height: 1),
+            const SizedBox(height: 12),
+          ],
+
+          if (lyrics.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 48),
+              child: Column(
+                children: [
+                  Icon(Icons.lyrics_outlined, size: 56, color: subColor.withOpacity(0.25)),
+                  const SizedBox(height: 16),
+                  Text('No Lyrics Yet',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                  const SizedBox(height: 6),
+                  Text(
+                    _canManageLyrics
+                        ? 'Write lyrics above, or promote a file using the ♪ button.'
+                        : 'Worship leaders can add lyrics here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...lyrics.asMap().entries.map((entry) {
+              final file = entry.value;
+              final fileType = file['fileType'] as String? ?? 'other';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _LyricsCard(
+                  file: file,
+                  fileType: fileType,
+                  isDark: isDark,
+                  textColor: textColor,
+                  subColor: subColor,
+                  canManage: _canManageLyrics,
+                  onView: () => _openFile(file),
+                  onRemove: () => _toggleLyrics(file),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  void _showWriteLyricsSheet(bool isDark) {
+    final titleCtrl  = TextEditingController();
+    final artistCtrl = TextEditingController();
+    final bodyCtrl   = TextEditingController();
+    final sheetBg    = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor  = isDark ? Colors.white : const Color(0xFF1E293B);
+    final subColor   = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final inputFill  = isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+
+    const sections = ['[Verse 1]', '[Chorus]', '[Verse 2]', '[Bridge]', '[Outro]', '[Pre-Chorus]'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          bool saving = false;
+
+          InputDecoration dec(String hint, {IconData? icon}) => InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: subColor, fontSize: 13),
+            prefixIcon: icon != null ? Icon(icon, color: subColor, size: 18) : null,
+            filled: true, fillColor: inputFill,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: borderColor)),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: borderColor)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFEC4899), width: 1.5)),
+          );
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: DraggableScrollableSheet(
+              expand: false,
+              initialChildSize: 0.88,
+              maxChildSize: 0.95,
+              builder: (_, ctrl) => Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                    child: Row(
+                      children: [
+                        Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: borderColor, borderRadius: BorderRadius.circular(99)))),
+                        const SizedBox(width: 12),
+                        Expanded(child: Text('Write Lyrics', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: textColor))),
+                        ElevatedButton(
+                          onPressed: saving ? null : () async {
+                            final title = titleCtrl.text.trim();
+                            final content = bodyCtrl.text.trim();
+                            if (title.isEmpty || content.isEmpty) return;
+                            setSheet(() => saving = true);
+                            try {
+                              await ApiService.submitChurchLyrics(
+                                widget.churchId,
+                                title: title,
+                                artist: artistCtrl.text.trim(),
+                                textContent: content,
+                              );
+                              if (ctx.mounted) Navigator.pop(ctx);
+                              _snack('Lyrics saved!');
+                              await _loadFiles();
+                            } catch (e) {
+                              setSheet(() => saving = false);
+                              _snack('$e', color: Colors.redAccent);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEC4899),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: saving
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Text('Save', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      controller: ctrl,
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                      children: [
+                        TextField(
+                          controller: titleCtrl,
+                          style: TextStyle(fontSize: 14, color: textColor),
+                          decoration: dec('Song title *', icon: Icons.music_note_outlined),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: artistCtrl,
+                          style: TextStyle(fontSize: 14, color: textColor),
+                          decoration: dec('Artist / Songwriter', icon: Icons.person_outline),
+                        ),
+                        const SizedBox(height: 14),
+                        // Section quick-insert chips
+                        Text('Quick Insert', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5, color: subColor)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8, runSpacing: 6,
+                          children: sections.map((s) => GestureDetector(
+                            onTap: () {
+                              final text = bodyCtrl.text;
+                              final sel = bodyCtrl.selection;
+                              final insert = '\n$s\n';
+                              final newText = text.replaceRange(
+                                sel.start < 0 ? text.length : sel.start,
+                                sel.end < 0 ? text.length : sel.end,
+                                insert,
+                              );
+                              bodyCtrl.value = TextEditingValue(
+                                text: newText,
+                                selection: TextSelection.collapsed(
+                                  offset: (sel.start < 0 ? text.length : sel.start) + insert.length,
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEC4899).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(color: const Color(0xFFEC4899).withOpacity(0.3)),
+                              ),
+                              child: Text(s, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFEC4899))),
+                            ),
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: bodyCtrl,
+                          maxLines: null,
+                          minLines: 14,
+                          style: TextStyle(fontSize: 14, height: 1.65, color: textColor, fontFamily: 'monospace'),
+                          decoration: dec('Paste or type your lyrics here…\n\nUse the chips above to insert section labels like [Verse 1], [Chorus]...'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -733,6 +952,7 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
         'pdf' => 'PDF',
         'image' => 'Image',
         'ppt' => 'Slide',
+        'video' => 'Video',
         _ => 'File',
       };
 
@@ -740,6 +960,7 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
         'pdf' => Icons.picture_as_pdf_outlined,
         'image' => Icons.image_outlined,
         'ppt' => Icons.slideshow_outlined,
+        'video' => Icons.videocam_outlined,
         _ => Icons.insert_drive_file_outlined,
       };
 
@@ -747,7 +968,8 @@ class _WorshipHubScreenState extends State<WorshipHubScreen>
         'pdf' => const Color(0xFFEF4444),
         'image' => const Color(0xFF0EA5E9),
         'ppt' => const Color(0xFFF59E0B),
-        _ => const Color(0xFF8B5CF6),
+        'video' => const Color(0xFF8B5CF6),
+        _ => AppColors.primary,
       };
 
   static IconData _fileIcon(String type) => switch (type) {

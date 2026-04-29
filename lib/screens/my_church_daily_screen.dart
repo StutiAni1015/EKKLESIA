@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
@@ -15,6 +14,7 @@ import 'member_notification_alert_screen.dart';
 import 'member_facial_scan_screen.dart';
 import 'worship_hub_screen.dart';
 import 'church_plan_screen.dart';
+import 'add_prayer_request_screen.dart';
 
 // Dusty rose is the accent for this community screen
 const _rose = Color(0xFFD7A49A);
@@ -39,6 +39,372 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
   // Testimony amen state
   final _amened = <int>{};
   final _amenCounts = [0, 0];
+
+  void _showComposeSheet(BuildContext context, bool isDark, Color textColor,
+      Color subColor, Color cardBg, Color borderColor) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: borderColor,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Create a Post',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Share with your church community',
+              style: TextStyle(fontSize: 13, color: subColor),
+            ),
+            const SizedBox(height: 20),
+            _ComposeOption(
+              icon: Icons.volunteer_activism_outlined,
+              color: AppColors.primary,
+              title: 'Prayer Request',
+              subtitle: 'Ask the community to pray with you',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AddPrayerRequestScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            _ComposeOption(
+              icon: Icons.menu_book_outlined,
+              color: const Color(0xFF8B5CF6),
+              title: 'Bible Verse',
+              subtitle: 'Share an encouraging scripture',
+              onTap: () {
+                Navigator.pop(context);
+                _showBibleVerseSheet(context, isDark, textColor, subColor,
+                    cardBg, borderColor);
+              },
+            ),
+            const SizedBox(height: 10),
+            _ComposeOption(
+              icon: Icons.event_outlined,
+              color: const Color(0xFF0EA5E9),
+              title: 'Event',
+              subtitle: 'Announce a church event or gathering',
+              onTap: () {
+                Navigator.pop(context);
+                _showEventSheet(context, isDark, textColor, subColor, cardBg,
+                    borderColor);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBibleVerseSheet(BuildContext context, bool isDark, Color textColor,
+      Color subColor, Color cardBg, Color borderColor) {
+    final verseCtrl = TextEditingController();
+    final refCtrl = TextEditingController();
+    final sheetBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Share a Bible Verse',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: textColor)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: refCtrl,
+                style: TextStyle(fontSize: 14, color: textColor),
+                decoration: InputDecoration(
+                  hintText: 'Reference (e.g. John 3:16)',
+                  hintStyle: TextStyle(color: subColor, fontSize: 13),
+                  prefixIcon:
+                      Icon(Icons.bookmark_outline, color: subColor, size: 18),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: borderColor)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: borderColor)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: verseCtrl,
+                maxLines: 4,
+                style: TextStyle(fontSize: 14, color: textColor),
+                decoration: InputDecoration(
+                  hintText: 'Type or paste the verse text…',
+                  hintStyle: TextStyle(color: subColor, fontSize: 13),
+                  filled: true,
+                  fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: borderColor)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(color: borderColor)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          const BorderSide(color: Color(0xFF8B5CF6), width: 1.5)),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B5CF6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    final verse = verseCtrl.text.trim();
+                    final ref = refCtrl.text.trim();
+                    if (verse.isEmpty) return;
+                    final name = userNameNotifier.value.trim().isEmpty
+                        ? 'Member'
+                        : userNameNotifier.value.trim();
+                    final initials = name
+                        .split(' ')
+                        .where((w) => w.isNotEmpty)
+                        .take(2)
+                        .map((w) => w[0].toUpperCase())
+                        .join();
+                    communityFeedNotifier.value = [
+                      CommunityFeedItem(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        type: FeedItemType.bibleVerse,
+                        authorName: name,
+                        authorInitials: initials,
+                        authorColor: const Color(0xFF8B5CF6),
+                        postedAt: DateTime.now(),
+                        content: verse,
+                        reference: ref.isEmpty ? null : ref,
+                      ),
+                      ...communityFeedNotifier.value,
+                    ];
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Bible verse shared with community!'),
+                      backgroundColor: Color(0xFF8B5CF6),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  },
+                  child: const Text('Share Verse',
+                      style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEventSheet(BuildContext context, bool isDark, Color textColor,
+      Color subColor, Color cardBg, Color borderColor) {
+    final titleCtrl = TextEditingController();
+    final dateCtrl = TextEditingController();
+    final timeCtrl = TextEditingController();
+    final locationCtrl = TextEditingController();
+    final sheetBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    InputDecoration _dec(String hint, IconData icon) => InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: subColor, fontSize: 13),
+          prefixIcon: Icon(icon, color: subColor, size: 18),
+          filled: true,
+          fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: borderColor)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: borderColor)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide:
+                  const BorderSide(color: Color(0xFF0EA5E9), width: 1.5)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: sheetBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('Announce an Event',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: textColor)),
+              const SizedBox(height: 16),
+              TextField(
+                  controller: titleCtrl,
+                  style: TextStyle(fontSize: 14, color: textColor),
+                  decoration: _dec('Event title *', Icons.title)),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: dateCtrl,
+                  style: TextStyle(fontSize: 14, color: textColor),
+                  decoration:
+                      _dec('Date (e.g. Sun, May 4)', Icons.calendar_today)),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: timeCtrl,
+                  style: TextStyle(fontSize: 14, color: textColor),
+                  decoration:
+                      _dec('Time (e.g. 10:00 AM)', Icons.access_time)),
+              const SizedBox(height: 10),
+              TextField(
+                  controller: locationCtrl,
+                  style: TextStyle(fontSize: 14, color: textColor),
+                  decoration:
+                      _dec('Location', Icons.location_on_outlined)),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0EA5E9),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    final title = titleCtrl.text.trim();
+                    if (title.isEmpty) return;
+                    final name = userNameNotifier.value.trim().isEmpty
+                        ? 'Member'
+                        : userNameNotifier.value.trim();
+                    final initials = name
+                        .split(' ')
+                        .where((w) => w.isNotEmpty)
+                        .take(2)
+                        .map((w) => w[0].toUpperCase())
+                        .join();
+                    communityFeedNotifier.value = [
+                      CommunityFeedItem(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        type: FeedItemType.event,
+                        authorName: name,
+                        authorInitials: initials,
+                        authorColor: const Color(0xFF0EA5E9),
+                        postedAt: DateTime.now(),
+                        content: locationCtrl.text.trim(),
+                        eventTitle: title,
+                        eventDate: dateCtrl.text.trim(),
+                        eventTime: timeCtrl.text.trim(),
+                        eventLocation: locationCtrl.text.trim(),
+                      ),
+                      ...communityFeedNotifier.value,
+                    ];
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Event announced to community!'),
+                      backgroundColor: Color(0xFF0EA5E9),
+                      behavior: SnackBarBehavior.floating,
+                    ));
+                  },
+                  child: const Text('Post Event',
+                      style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,25 +451,43 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                               color: textColor,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) =>
-                                      const MemberNotificationAlertScreen()),
-                            ),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF334155)
-                                    : const Color(0xFFE2E8F0),
-                                shape: BoxShape.circle,
+                          Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _showComposeSheet(context, isDark, textColor, subColor, cardBg, borderColor),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.12),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.add,
+                                      color: AppColors.primary, size: 22),
+                                ),
                               ),
-                              child: Icon(Icons.notifications,
-                                  color: textColor, size: 22),
-                            ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const MemberNotificationAlertScreen()),
+                                ),
+                                child: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF334155)
+                                        : const Color(0xFFE2E8F0),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(Icons.notifications,
+                                      color: textColor, size: 22),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -486,171 +870,44 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      SizedBox(
-                        height: 190,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 12),
-                          itemCount: 2,
-                          itemBuilder: (ctx, i) {
-                            final times = [
-                              'FRIDAY, 7:00 PM',
-                              'SUNDAY, 9:00 AM'
-                            ];
-                            final titles = [
-                              'Youth Night: Unstoppable',
-                              'Sunday Morning Service'
-                            ];
-                            final gradients = [
-                              [
-                                const Color(0xFF6B4E3D),
-                                const Color(0xFFD7A49A)
-                              ],
-                              [
-                                const Color(0xFF3D5A4E),
-                                const Color(0xFFB8C4B5)
-                              ],
-                            ];
-                            final icons = [
-                              Icons.people_alt,
-                              Icons.church
-                            ];
-                            // Compute next occurrence dates
-                            final now = DateTime.now();
-                            final daysUntilFriday = (5 - now.weekday + 7) % 7;
-                            final daysUntilSunday = (7 - now.weekday + 7) % 7 == 0 ? 7 : (7 - now.weekday + 7) % 7;
-                            final eventDates = [
-                              DateTime(now.year, now.month, now.day + (daysUntilFriday == 0 ? 7 : daysUntilFriday), 19, 0),
-                              DateTime(now.year, now.month, now.day + daysUntilSunday, 9, 0),
-                            ];
-                            return ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(16),
-                              child: Container(
-                                width: 220,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: gradients[i]
-                                        .map((c) => c as Color)
-                                        .toList(),
-                                  ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const ChurchEventsListScreen()),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: cardBg,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: borderColor),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.event_outlined,
+                                    size: 40, color: subColor.withOpacity(0.35)),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'No Upcoming Events',
+                                  style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: textColor),
                                 ),
-                                child: Stack(
-                                  children: [
-                                    Center(
-                                      child: Icon(
-                                        icons[i],
-                                        size: 56,
-                                        color: Colors.white
-                                            .withOpacity(0.15),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: Container(
-                                        padding:
-                                            const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topCenter,
-                                            end: Alignment.bottomCenter,
-                                            colors: [
-                                              Colors.transparent,
-                                              Colors.black
-                                                  .withOpacity(0.6),
-                                            ],
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              times[i],
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight:
-                                                    FontWeight.bold,
-                                                color: _rose
-                                                    .withOpacity(0.9),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              titles[i],
-                                              style: const TextStyle(
-                                                fontSize: 13,
-                                                fontWeight:
-                                                    FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            GestureDetector(
-                                              onTap: () {
-                                                final event = Event(
-                                                  title: titles[i],
-                                                  description:
-                                                      'Grace Global Church — ${times[i]}',
-                                                  startDate: eventDates[i],
-                                                  endDate: eventDates[i]
-                                                      .add(const Duration(hours: 2)),
-                                                  allDay: false,
-                                                );
-                                                Add2Calendar.addEvent2Cal(event);
-                                              },
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 10,
-                                                        vertical: 5),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.18),
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                  border: Border.all(
-                                                    color: Colors.white
-                                                        .withOpacity(0.35),
-                                                  ),
-                                                ),
-                                                child: const Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Icon(
-                                                        Icons.calendar_today,
-                                                        color: Colors.white,
-                                                        size: 11),
-                                                    SizedBox(width: 5),
-                                                    Text(
-                                                      'Add to Calendar',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Events created by your church will appear here.',
+                                  textAlign: TextAlign.center,
+                                  style:
+                                      TextStyle(fontSize: 12, color: subColor),
                                 ),
-                              ),
-                            );
-                          },
+                              ],
+                            ),
+                          ),
                         ),
                       ),
 
@@ -1606,6 +1863,7 @@ class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
   String _liveTitle = "";
   bool _showWorshipHub = false;
   String _memberRole = "member";
+  bool _isGoingLive = false;
 
   static const _worshipRoles = {"worship_leader", "media_team", "choir", "secretary"};
 
@@ -1635,11 +1893,114 @@ class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
           orElse: () => {},
         );
         final role = me["role"] as String? ?? "member";
+        userMemberRoleNotifier.value = role;
         if (mounted) setState(() {
           _memberRole    = role;
           _showWorshipHub = _worshipRoles.contains(role) || isPastorNotifier.value;
         });
       }
+    } catch (_) {}
+  }
+
+  Future<void> _showGoLiveDialog() async {
+    final churchId = myChurchIdNotifier.value;
+    if (churchId == null) return;
+    final urlCtrl = TextEditingController();
+    final titleCtrl = TextEditingController(text: 'Sunday Service');
+    final isDark = widget.isDark;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.live_tv, color: Color(0xFFEF4444), size: 22),
+            SizedBox(width: 8),
+            Text('Go Live', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Paste your YouTube Live or streaming URL below. Members will be able to watch inside the app.',
+              style: TextStyle(fontSize: 13, height: 1.5),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleCtrl,
+              decoration: InputDecoration(
+                hintText: 'Service title',
+                prefixIcon: const Icon(Icons.title, size: 18),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: urlCtrl,
+              decoration: InputDecoration(
+                hintText: 'https://youtube.com/watch?v=...',
+                prefixIcon: const Icon(Icons.link, size: 18),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Go Live'),
+          ),
+        ],
+      ),
+    );
+    if (result != true) return;
+    final url = urlCtrl.text.trim();
+    final title = titleCtrl.text.trim();
+    if (url.isEmpty) return;
+    setState(() => _isGoingLive = true);
+    try {
+      await ApiService.goLive(churchId, url, title);
+      if (mounted) setState(() {
+        _isLive = true;
+        _streamUrl = url;
+        _liveTitle = title;
+      });
+    } catch (_) {} finally {
+      if (mounted) setState(() => _isGoingLive = false);
+    }
+  }
+
+  Future<void> _endLive() async {
+    final churchId = myChurchIdNotifier.value;
+    if (churchId == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('End Live Stream?'),
+        content: const Text('Members will no longer be able to join the live service.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('End Live', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await ApiService.endLive(churchId);
+      if (mounted) setState(() { _isLive = false; _streamUrl = ''; _liveTitle = ''; });
     } catch (_) {}
   }
 
@@ -1650,8 +2011,9 @@ class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
     final textColor = widget.isDark ? Colors.white : const Color(0xFF1E293B);
     final churchId = myChurchIdNotifier.value;
     final churchName = myChurchNotifier.value?.name ?? "";
+    final isPastor = isPastorNotifier.value;
 
-    if (!_isLive && !_showWorshipHub) return const SizedBox.shrink();
+    if (!_isLive && !_showWorshipHub && !isPastor) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -1662,7 +2024,13 @@ class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
             GestureDetector(
               onTap: () async {
                 final uri = Uri.tryParse(_streamUrl);
-                if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (uri != null) {
+                  // Open stream in-app so members never leave Ekklesia
+                  final launched = await launchUrl(uri, mode: LaunchMode.inAppWebView);
+                  if (!launched && mounted) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                }
               },
               child: Container(
                 margin: const EdgeInsets.only(bottom: 10),
@@ -1753,6 +2121,84 @@ class _LiveAndWorshipBannerState extends State<_LiveAndWorshipBanner> {
                     ),
                     const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 18),
                   ],
+                ),
+              ),
+            ),
+
+          // Go Live button (pastor only, when not live)
+          if (isPastor && !_isLive) ...[
+            const SizedBox(height: 10),
+            GestureDetector(
+              onTap: _isGoingLive ? null : _showGoLiveDialog,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: _isGoingLive
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Color(0xFFEF4444)))
+                          : const Icon(Icons.live_tv, color: Color(0xFFEF4444), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Start Live Stream",
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor)),
+                          Text("Share a YouTube or streaming link with your church",
+                              style: TextStyle(
+                                  fontSize: 11, color: widget.subColor)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right,
+                        color: Color(0xFFEF4444), size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
+          // End Live button (pastor only, when live)
+          if (isPastor && _isLive)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: GestureDetector(
+                onTap: _endLive,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'End Live Stream',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1910,6 +2356,73 @@ class _ChurchPlanBannerState extends State<_ChurchPlanBanner> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Compose option tile ───────────────────────────────────────────────────────
+
+class _ComposeOption extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ComposeOption({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withOpacity(0.2)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B))),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF64748B))),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: color, size: 20),
+          ],
         ),
       ),
     );

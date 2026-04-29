@@ -1,154 +1,315 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'kids_home_screen.dart';
-import 'watch_stories_screen.dart';
 import 'quiz_time_screen.dart';
 
-class KnowJesusScreen extends StatelessWidget {
-  const KnowJesusScreen({super.key});
-
-  static const kPrimary = Color(0xFFA53500);
-  static const kPrimaryContainer = Color(0xFFFF7947);
-  static const kSurface = Color(0xFFF5F6F7);
-  static const kSurfaceContainerLowest = Color(0xFFFFFFFF);
-  static const kOnSurface = Color(0xFF2C2F30);
-  static const kOnSurfaceVariant = Color(0xFF595C5D);
+class KnowJesusScreen extends StatefulWidget {
+  final Map<String, dynamic>? child;
+  const KnowJesusScreen({super.key, this.child});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kSurface,
-      bottomNavigationBar: _KidsBottomNav(activeIndex: kKidsTabKnowJesus),
-      body: CustomScrollView(
-        slivers: [
-          // AppBar
-          SliverAppBar(
-            floating: true,
-            snap: true,
-            backgroundColor: Colors.white.withOpacity(0.9),
-            surfaceTintColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_rounded,
-                  color: kOnSurface, size: 20),
-              onPressed: () => Navigator.maybePop(context),
-            ),
-            title: const Text(
-              'Know Jesus',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: kPrimary,
-                letterSpacing: -0.3,
+  State<KnowJesusScreen> createState() => _KnowJesusScreenState();
+}
+
+class _KnowJesusScreenState extends State<KnowJesusScreen> {
+  bool _quizDone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkQuiz();
+  }
+
+  void _showInfoSheet(BuildContext ctx, String emoji, String title, String body) {
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: kKidsSurfaceContLowest,
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text(title,
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 20, fontWeight: FontWeight.w900, color: kKidsPrimary)),
+            const SizedBox(height: 12),
+            Text(body,
+                style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14, color: kKidsOnSurface, height: 1.6)),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kKidsPrimary, foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Text('Got it! 👍',
+                    style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w800)),
               ),
             ),
-          ),
-
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Hero
-                _buildHero(),
-                const SizedBox(height: 28),
-                // Section label
-                const Text(
-                  'EXPLORE HIS STORY',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.2,
-                    color: kOnSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                // Asymmetric card layout
-                _buildAsymmetricCards(context),
-                const SizedBox(height: 28),
-                // CTA Quiz button
-                _buildQuizCTA(context),
-              ]),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHero() {
+  Future<void> _checkQuiz() async {
+    final childId = widget.child?['_id'] as String? ?? 'guest';
+    final now     = DateTime.now();
+    final today   = '${now.year}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
+    final prefs   = await SharedPreferences.getInstance();
+    if (mounted) setState(() => _quizDone = prefs.getBool('quiz_done_${childId}_$today') ?? false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final emoji = widget.child?['avatarEmoji'] as String? ?? '🧒';
+    final name  = widget.child?['name']        as String? ?? 'Storyteller';
+
+    return Scaffold(
+      backgroundColor: kKidsSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── App bar ───────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (_) => KidsHomeScreen(child: widget.child))),
+                    child: Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: kKidsSurfaceContLowest,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 8)],
+                      ),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: kKidsPrimary),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Hi, $name! 👋',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 18, fontWeight: FontWeight.w900, color: kKidsPrimary)),
+                        Text('Explore who Jesus is',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 11, color: kKidsOnSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  // Kingdom badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: kKidsPrimary,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text('KINGDOM',
+                            style: GoogleFonts.plusJakartaSans(
+                                fontSize: 10, fontWeight: FontWeight.w900,
+                                color: Colors.white, letterSpacing: 1.2)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Hero card ─────────────────────────────────────────
+                    _HeroCard(),
+                    const SizedBox(height: 16),
+
+                    // ── Two side-by-side info cards ───────────────────────
+                    Row(
+                      children: [
+                        Expanded(child: _InfoCard(
+                          title: 'Jesus as\na Child',
+                          emoji: '👶',
+                          color: kKidsSecondaryContainer,
+                          textColor: kKidsSecondary,
+                          radius: const BorderRadius.only(
+                            topLeft: Radius.circular(40),
+                            topRight: Radius.circular(16),
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                          onTap: () => _showInfoSheet(context, '👶', 'Jesus as a Child',
+                            'Jesus was born in Bethlehem in a manger. His family then moved to Nazareth, where He grew up. When Jesus was 12 years old, He visited the Temple in Jerusalem and amazed the teachers with His wisdom. The Bible says He grew in wisdom, stature, and favour with God and people.\n\n📖 Luke 2:52 — "Jesus grew in wisdom and stature, and in favour with God and man."'),
+                        )),
+                        const SizedBox(width: 12),
+                        Expanded(child: _InfoCard(
+                          title: 'Jesus\nLoves Kids',
+                          emoji: '❤️',
+                          color: kKidsTertiaryContainer,
+                          textColor: kKidsTertiary,
+                          radius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(40),
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                          onTap: () => _showInfoSheet(context, '❤️', 'Jesus Loves Kids',
+                            'One day, people brought little children to Jesus so He could bless them. His disciples tried to send them away, but Jesus said, "Let the children come to me and do not stop them — the Kingdom of God belongs to people like these."\n\nHe picked up the children, placed His hands on them, and blessed them.\n\n📖 Mark 10:14 — "Let the little children come to me, for the kingdom of God belongs to such as these."'),
+                        )),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Miracles card ─────────────────────────────────────
+                    _MiraclesCard(onMiracleTap: _showInfoSheet),
+                    const SizedBox(height: 24),
+
+                    // ── CTA button ────────────────────────────────────────
+                    GestureDetector(
+                      onTap: _quizDone ? null : () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => QuizTimeScreen(child: widget.child))),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        decoration: BoxDecoration(
+                          gradient: _quizDone
+                              ? const LinearGradient(colors: [Color(0xFF64748B), Color(0xFF475569)])
+                              : const LinearGradient(colors: [kKidsPrimary, Color(0xFFD64A00)]),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (_quizDone ? const Color(0xFF64748B) : kKidsPrimary).withAlpha(80),
+                              blurRadius: 16, offset: const Offset(0, 6)),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(_quizDone ? '✅' : '🎯', style: const TextStyle(fontSize: 20)),
+                            const SizedBox(width: 10),
+                            Text(_quizDone ? 'QUIZ COMPLETED' : 'TAKE THE JESUS QUIZ',
+                                style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 16, fontWeight: FontWeight.w900,
+                                    color: Colors.white, letterSpacing: 0.8)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Bottom nav ────────────────────────────────────────────────
+            KidsBottomNav(activeIndex: kKidsTabKnowJesus, child: widget.child),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Hero card ─────────────────────────────────────────────────────────────────
+
+class _HeroCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1A1040), Color(0xFF3B1F7A)],
+          colors: [Color(0xFF306800), Color(0xFF4A9E00)],
         ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(32),
-          topRight: Radius.circular(12),
-          bottomLeft: Radius.circular(12),
-          bottomRight: Radius.circular(32),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(48),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(48),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF3B1F7A).withOpacity(0.4),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              '✨  LUMINA KIDS',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: Colors.white70,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Who is\nJesus? 🕊️',
-            style: TextStyle(
-              fontSize: 38,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              height: 1.1,
-              letterSpacing: -0.8,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Jesus is God\'s Son who came to earth to love us, teach us, and save us. Discover His amazing story!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white70,
-              height: 1.6,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 20),
           Row(
             children: [
-              const Text('📖', style: TextStyle(fontSize: 18)),
-              const SizedBox(width: 8),
-              const Text(
-                'John 3:16 • Luke 2 • Matthew 5',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white54,
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha(50),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text("TODAY'S TOPIC",
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 9, fontWeight: FontWeight.w800,
+                        color: Colors.white, letterSpacing: 1.5)),
+              ),
+              const Spacer(),
+              const Text('✝️', style: TextStyle(fontSize: 36)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Who is Jesus?',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white)),
+          const SizedBox(height: 8),
+          Text('Jesus is the Son of God who came to earth to love us,\nteach us, and save us. He is our best friend!',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 12, color: Colors.white.withAlpha(220), height: 1.5)),
+          const SizedBox(height: 16),
+          // Progress bar
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Journey Progress',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white70)),
+                  Text('3 of 5 topics',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white70)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  value: 0.6,
+                  backgroundColor: Colors.white.withAlpha(50),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  minHeight: 6,
                 ),
               ),
             ],
@@ -157,305 +318,136 @@ class KnowJesusScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildAsymmetricCards(BuildContext context) {
-    return Column(
-      children: [
-        // Large card
-        _JesusCard(
-          emoji: '👦',
-          title: 'Jesus as a Child',
-          body:
-              'Did you know Jesus was once your age? He grew up in Nazareth, helped his father Joseph, and even amazed teachers at the Temple when he was only 12!',
-          gradientColors: const [Color(0xFF0D6EFD), Color(0xFF0DCAF0)],
-          topLeft: 28,
-          bottomRight: 28,
-        ),
-        const SizedBox(height: 14),
-        // Two smaller side-by-side
-        Row(
-          children: [
-            Expanded(
-              child: _JesusCard(
-                emoji: '❤️',
-                title: 'Jesus Loves Kids',
-                body:
-                    '"Let the little children come to me." — Matthew 19:14',
-                gradientColors: const [Color(0xFFE91E63), Color(0xFFFF5722)],
-                topRight: 24,
-                bottomLeft: 24,
-                compact: true,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _JesusCard(
-                emoji: '⚡',
-                title: 'The Miracles',
-                body:
-                    'Water into wine, healing the sick, walking on water — Jesus did the impossible!',
-                gradientColors: const [Color(0xFF306800), Color(0xFF4CAF50)],
-                topLeft: 24,
-                bottomRight: 24,
-                compact: true,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildQuizCTA(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const QuizTimeScreen()),
-        (r) => false,
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [kPrimary, kPrimaryContainer],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: kPrimary.withOpacity(0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Text('🎯', style: TextStyle(fontSize: 36)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Test Your Knowledge!',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Take the Jesus Quiz and earn stars ⭐',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_rounded,
-                color: Colors.white, size: 22),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-class _JesusCard extends StatelessWidget {
-  final String emoji;
-  final String title;
-  final String body;
-  final List<Color> gradientColors;
-  final double topLeft;
-  final double topRight;
-  final double bottomLeft;
-  final double bottomRight;
-  final bool compact;
+// ── Info card ─────────────────────────────────────────────────────────────────
 
-  const _JesusCard({
-    required this.emoji,
+class _InfoCard extends StatelessWidget {
+  final String title;
+  final String emoji;
+  final Color color;
+  final Color textColor;
+  final BorderRadius radius;
+  final VoidCallback? onTap;
+
+  const _InfoCard({
     required this.title,
-    required this.body,
-    required this.gradientColors,
-    this.topLeft = 12,
-    this.topRight = 12,
-    this.bottomLeft = 12,
-    this.bottomRight = 12,
-    this.compact = false,
+    required this.emoji,
+    required this.color,
+    required this.textColor,
+    required this.radius,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: color, borderRadius: radius),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 32)),
+          const SizedBox(height: 10),
+          Text(title,
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15, fontWeight: FontWeight.w900, color: textColor, height: 1.2)),
+          const SizedBox(height: 6),
+          Text('Tap to learn more',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 10, color: textColor.withAlpha(180))),
+        ],
+      ),
+    ));
+  }
+}
+
+// ── Miracles card ─────────────────────────────────────────────────────────────
+
+class _MiraclesCard extends StatelessWidget {
+  final void Function(BuildContext, String, String, String) onMiracleTap;
+  const _MiraclesCard({required this.onMiracleTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final miracles = [
+      ('⛈️', 'Storms', 'Calming the Storm',
+        'One evening, Jesus and His disciples got into a boat. A huge storm arose and the waves crashed into the boat. The disciples were terrified! But Jesus stood up and said, "Quiet! Be still!" — and the wind stopped and the sea became completely calm.\n\n📖 Mark 4:39 — "He said to the waves, \'Quiet! Be still!\' Then the wind died down and it was completely calm."'),
+      ('🤲', 'Healing', 'Healing the Sick',
+        'Jesus healed many people who were sick. He touched a man with leprosy and made him clean. He healed blind people, helped people walk who could not walk, and even raised people from the dead! Jesus showed us that He cares about our pain and has power over sickness.\n\n📖 Matthew 4:23 — "Jesus went throughout Galilee, healing every disease and sickness among the people."'),
+      ('🐟', 'Feeding 5,000', 'Feeding the Multitude',
+        'A crowd of over 5,000 people had been listening to Jesus all day and were hungry. A boy gave Jesus 5 loaves of bread and 2 fish. Jesus looked up to heaven, gave thanks, and broke the loaves. His disciples gave the food to the people — and everyone ate until they were full! There were even 12 baskets of leftovers!\n\n📖 John 6:11 — "Jesus gave thanks and distributed to those who were seated as much as they wanted."'),
+      ('👁️', 'Sight', 'Giving Sight to the Blind',
+        'A blind man named Bartimaeus heard that Jesus was nearby. He cried out, "Jesus, Son of David, have mercy on me!" Jesus stopped and asked, "What do you want me to do for you?" He said, "Teacher, I want to see!" Jesus said, "Go, your faith has healed you." Immediately he could see!\n\n📖 Mark 10:52 — "Your faith has healed you." Immediately he received his sight."'),
+    ];
+
     return Container(
-      padding: EdgeInsets.all(compact ? 16 : 22),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: kKidsSurfaceContLowest,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(topLeft),
-          topRight: Radius.circular(topRight),
-          bottomLeft: Radius.circular(bottomLeft),
-          bottomRight: Radius.circular(bottomRight),
+          topLeft: Radius.circular(48),
+          topRight: Radius.circular(20),
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
         ),
         boxShadow: [
-          BoxShadow(
-            color: gradientColors.first.withOpacity(0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
+          BoxShadow(color: Color(0x0D000000), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji,
-              style: TextStyle(fontSize: compact ? 28 : 36)),
-          SizedBox(height: compact ? 10 : 14),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: compact ? 13 : 18,
-              fontWeight: FontWeight.w900,
-              color: Colors.white,
-              letterSpacing: -0.3,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Miracles of Jesus',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16, fontWeight: FontWeight.w900, color: kKidsOnSurface)),
+                    const SizedBox(height: 4),
+                    Text('Jesus performed amazing wonders!',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11, color: kKidsOnSurfaceVariant)),
+                  ],
+                ),
+              ),
+              const Text('🧺', style: TextStyle(fontSize: 32)),
+            ],
           ),
-          SizedBox(height: compact ? 6 : 10),
-          Text(
-            body,
-            style: TextStyle(
-              fontSize: compact ? 11 : 13,
-              color: Colors.white.withOpacity(0.8),
-              height: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Shared Kids Bottom Nav ─────────────────────────────────────────────────────
-
-class _KidsBottomNav extends StatelessWidget {
-  final int activeIndex;
-  const _KidsBottomNav({required this.activeIndex});
-
-  void _onTap(BuildContext context, int index) {
-    if (index == activeIndex) return;
-    Widget dest;
-    switch (index) {
-      case kKidsTabHome:
-        dest = const KidsHomeScreen();
-        break;
-      case kKidsTabWatch:
-        dest = const WatchStoriesScreen();
-        break;
-      case kKidsTabKnowJesus:
-        dest = const KnowJesusScreen();
-        break;
-      case kKidsTabQuiz:
-        dest = const QuizTimeScreen();
-        break;
-      default:
-        return;
-    }
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => dest),
-      (r) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final tabs = [
-      _KidsTab(Icons.home_rounded, 'Home'),
-      _KidsTab(Icons.play_circle_rounded, 'Watch'),
-      _KidsTab(Icons.auto_awesome_rounded, 'Know Jesus'),
-      _KidsTab(Icons.extension_rounded, 'Quiz'),
-    ];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(tabs.length, (i) {
-              final isActive = activeIndex == i;
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8, runSpacing: 8,
+            children: miracles.map((m) {
               return GestureDetector(
-                onTap: () => _onTap(context, i),
-                behavior: HitTestBehavior.opaque,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
+                onTap: () => onMiracleTap(context, m.$1, m.$3, m.$4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isActive
-                        ? const Color(0xFFFF7947).withOpacity(0.14)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(18),
+                    color: kKidsPrimaryContainer.withAlpha(30),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(color: kKidsPrimaryContainer.withAlpha(80)),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        tabs[i].icon,
-                        size: 22,
-                        color: isActive
-                            ? const Color(0xFFA53500)
-                            : const Color(0xFF9CA3AF),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        tabs[i].label,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                          color: isActive
-                              ? const Color(0xFFA53500)
-                              : const Color(0xFF9CA3AF),
-                        ),
-                      ),
+                      Text(m.$1, style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      Text(m.$2,
+                          style: GoogleFonts.plusJakartaSans(
+                              fontSize: 12, fontWeight: FontWeight.w700, color: kKidsPrimary)),
                     ],
                   ),
                 ),
               );
-            }),
+            }).toList(),
           ),
-        ),
+        ],
       ),
     );
   }
-}
-
-class _KidsTab {
-  final IconData icon;
-  final String label;
-  _KidsTab(this.icon, this.label);
 }

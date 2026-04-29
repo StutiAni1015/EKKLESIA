@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/app_colors.dart';
 import 'book_library_screen.dart';
 
 class BookReaderScreen extends StatefulWidget {
@@ -302,7 +303,7 @@ ${_sampleText(title, i)}''');
                       min: 12,
                       max: 26,
                       divisions: 7,
-                      activeColor: const Color(0xFFEC5B13),
+                      activeColor: AppColors.primary,
                       onChanged: (v) {
                         setState(() => _fontSize = v);
                         setSheet(() {});
@@ -358,7 +359,7 @@ ${_sampleText(title, i)}''');
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           color: active
-                              ? const Color(0xFFEC5B13)
+                              ? AppColors.primary
                               : _subClr.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -505,7 +506,7 @@ class _ThemeBtn extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive
-                ? const Color(0xFFEC5B13)
+                ? AppColors.primary
                 : Colors.grey.withOpacity(0.3),
             width: isActive ? 2 : 1,
           ),

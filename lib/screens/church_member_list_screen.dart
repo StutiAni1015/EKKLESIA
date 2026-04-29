@@ -58,7 +58,7 @@ class _ChurchMemberListScreenState extends State<ChurchMemberListScreen> {
       joinDate: 'Nov 2020',
       status: 'Verified',
       initials: 'EB',
-      gradientColors: [Color(0xFFEC5B13), Color(0xFFDC2626)],
+      gradientColors: [AppColors.primary, Color(0xFFDC2626)],
     ),
     _Member(
       name: 'Felix Asante',

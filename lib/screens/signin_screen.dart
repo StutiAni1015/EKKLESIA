@@ -63,11 +63,6 @@ class _SigninScreenState extends State<SigninScreen> {
 
     if (!mounted) return;
 
-    // Use email prefix as display name if name not already set
-    if (userNameNotifier.value.isEmpty) {
-      userNameNotifier.value = _emailCtrl.text.split('@').first;
-    }
-
     // Persist session so the user is auto-logged-in on next app restart.
     if (_rememberMe) {
       await ApiService.saveSession(

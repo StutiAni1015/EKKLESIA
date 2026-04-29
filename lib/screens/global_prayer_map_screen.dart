@@ -5,10 +5,8 @@ import '../widgets/app_bottom_bar.dart';
 import 'submit_global_prayer_screen.dart';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
-const _orange     = Color(0xFFEC5B13);
+const _orange     = Color(0xFF9E4300);
 const _orangeCore = Color(0xFFFF9A5C);
-
-// Hotspots are now fully dynamic — driven by GlobalPrayerLight entries only.
 
 const _recentRequests = [
   _RecentRequest(
@@ -369,11 +367,6 @@ const _centroids = <String, (double lat, double lng)>{
   'VN': (14.1, 108.3),  'YE': (15.6, 48.5),   'ZM': (-13.1, 27.8),
   'ZW': (-19.0, 29.2),
 };
-
-// ── Flag emoji from ISO-3166-1 alpha-2 code ───────────────────────────────────
-String _flag(String iso) => iso.toUpperCase().runes
-    .map((r) => String.fromCharCode(r - 0x41 + 0x1F1E6))
-    .join();
 
 // ── Map View ─────────────────────────────────────────────────────────────────
 class _MapView extends StatelessWidget {
@@ -896,26 +889,6 @@ class _RequestCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-class _MapBtn extends StatelessWidget {
-  final IconData icon;
-  const _MapBtn({required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(150),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withAlpha(30)),
-      ),
-      child: Icon(icon, color: Colors.white, size: 18),
     );
   }
 }

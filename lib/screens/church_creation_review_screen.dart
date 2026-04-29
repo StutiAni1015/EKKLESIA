@@ -71,6 +71,7 @@ class _ChurchCreationReviewScreenState
       );
       // Mark user as a pastor in local session
       isPastorNotifier.value = true;
+      userMemberRoleNotifier.value = 'pastor';
       // Clear draft
       draft.clear();
       churchDraftNotifier.notifyListeners();

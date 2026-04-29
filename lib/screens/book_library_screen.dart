@@ -54,7 +54,7 @@ class BookLibraryScreenState extends State<BookLibraryScreen>
       description:
           'One of the most widely read daily devotionals of all time, offering 365 days of spiritual challenges.',
       gradientStart: Color(0xFFDCAE96),
-      gradientEnd: Color(0xFFEC5B13),
+      gradientEnd: AppColors.primary,
       pages: 400,
       emoji: '🌟',
     ),

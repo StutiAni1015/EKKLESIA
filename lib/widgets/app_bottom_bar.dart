@@ -47,10 +47,7 @@ _FabConfig _fabConfigFor(BuildContext context, int activeIndex) {
       return _FabConfig(
         icon: Icons.edit_outlined,
         label: 'Edit',
-        onPressed: () {
-          // Find the nearest _UserProfileScreenState and open its edit sheet
-          // Instead, just navigate to profile — the edit button is in the AppBar
-        },
+        onPressed: () {},
       );
     default: // kTabHome and all other screens
       return _FabConfig(
@@ -65,8 +62,6 @@ _FabConfig _fabConfigFor(BuildContext context, int activeIndex) {
 }
 
 // ── Public FAB builder ────────────────────────────────────────────────────────
-/// Pass [activeIndex] matching the screen's tab so the FAB icon/action
-/// animates to match the context (Bible · Prayer+ · Give+ · Edit).
 FloatingActionButton buildCenterFab(
   BuildContext context, {
   int activeIndex = kTabHome,
@@ -98,7 +93,7 @@ class _AnimatedFabContent extends StatelessWidget {
         child: FadeTransition(opacity: anim, child: child),
       ),
       child: Column(
-        key: ValueKey(icon), // triggers animation when icon changes
+        key: ValueKey(icon),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: Colors.white, size: 22),
@@ -162,8 +157,8 @@ class AppBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final navBg = isDark
-        ? const Color(0xFF0F172A).withOpacity(0.95)
-        : Colors.white.withOpacity(0.95);
+        ? const Color(0xFF0F172A).withAlpha(242)
+        : Colors.white.withAlpha(242);
 
     final items = <_NavItem?>[
       const _NavItem(Icons.home_rounded, 'Home'),

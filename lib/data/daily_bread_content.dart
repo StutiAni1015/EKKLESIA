@@ -42,7 +42,7 @@ const emotionLabels = [
   'Peaceful',
 ];
 
-// 6 emotions × 3 variations = 18 unique daily reflections
+// 6 emotions × 7 variations = 42 unique daily reflections (one per day of the week)
 final _content = [
   // 0 – Anxious
   [
@@ -84,6 +84,58 @@ final _content = [
       reflectionQuestion: 'Which truth about God brings the most calm to your current fear?',
       footerVerse: 'Fear not, for I have redeemed you. — Isaiah 43:1',
       gradientColors: [Color(0xFF5B4B7A), Color(0xFF9B7FB0)],
+    ),
+    BreadContent(
+      tag: 'PLANS FOR YOUR FUTURE',
+      heroTitle: 'God Holds Your\nTomorrow in His Hands',
+      verseText:
+          '"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, plans to give you hope and a future."',
+      verseRef: 'Jeremiah 29:11',
+      readingRef: 'Romans 8:26–30',
+      readingText:
+          '"And we know that in all things God works for the good of those who love him, who have been called according to his purpose... For those God foreknew he also predestined to be conformed to the image of his Son... And those he predestined, he also called; those he called, he also justified; those he justified, he also glorified."',
+      reflectionQuestion: 'When anxiety about the future grips you, how does knowing God has a plan for you bring relief?',
+      footerVerse: 'Commit your way to the Lord; trust in him. — Psalm 37:5',
+      gradientColors: [Color(0xFF33691E), Color(0xFF8BC34A)],
+    ),
+    BreadContent(
+      tag: 'ONE DAY AT A TIME',
+      heroTitle: 'Today Is Enough —\nDo Not Borrow Tomorrow',
+      verseText:
+          '"Therefore do not worry about tomorrow, for tomorrow will worry about itself. Each day has enough trouble of its own."',
+      verseRef: 'Matthew 6:34',
+      readingRef: 'Lamentations 3:22–24',
+      readingText:
+          '"Because of the Lord\'s great love we are not consumed, for his compassions never fail. They are new every morning; great is your faithfulness. I say to myself, \'The Lord is my portion; therefore I will wait for him.\'"',
+      reflectionQuestion: 'What specific anxiety about the future are you carrying today that belongs to God, not you?',
+      footerVerse: 'Great is thy faithfulness. — Lamentations 3:23',
+      gradientColors: [Color(0xFF546E7A), Color(0xFF90A4AE)],
+    ),
+    BreadContent(
+      tag: 'MY LIGHT AND SALVATION',
+      heroTitle: 'When Fear Comes,\nRemember Who Your God Is',
+      verseText:
+          '"The Lord is my light and my salvation — whom shall I fear? The Lord is the stronghold of my life — of whom shall I be afraid?"',
+      verseRef: 'Psalm 27:1',
+      readingRef: 'Psalm 27:1–8',
+      readingText:
+          '"When the wicked advance against me to devour me, it is my enemies and my foes who will stumble and fall. Though an army besiege me, my heart will not fear; though war break out against me, even then I will be confident... For in the day of trouble he will keep me safe in his dwelling; he will hide me in the shelter of his sacred tent."',
+      reflectionQuestion: 'Name one thing you fear today. Then read this verse aloud. What changes?',
+      footerVerse: 'The Lord is my helper; I will not be afraid. — Hebrews 13:6',
+      gradientColors: [Color(0xFF6D1B7B), Color(0xFFCE93D8)],
+    ),
+    BreadContent(
+      tag: 'WINGS LIKE EAGLES',
+      heroTitle: 'God Renews Your Strength\nWhen You Are Exhausted',
+      verseText:
+          '"But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint."',
+      verseRef: 'Isaiah 40:31',
+      readingRef: 'Isaiah 40:28–31',
+      readingText:
+          '"Do you not know? Have you not heard? The Lord is the everlasting God, the Creator of the ends of the earth. He will not grow tired or weary, and his understanding no one can fathom. He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the Lord will renew their strength."',
+      reflectionQuestion: 'In what area of your life are you most weary right now? Ask God to be your strength there.',
+      footerVerse: 'He gives strength to the weary. — Isaiah 40:29',
+      gradientColors: [Color(0xFF01579B), Color(0xFF4FC3F7)],
     ),
   ],
 
@@ -128,6 +180,58 @@ final _content = [
       footerVerse: 'May your joy be complete. — John 15:11',
       gradientColors: [Color(0xFF1565C0), Color(0xFF42A5F5)],
     ),
+    BreadContent(
+      tag: 'A CHEERFUL HEART',
+      heroTitle: 'Joy Is Medicine for\nthe Soul',
+      verseText:
+          '"A cheerful heart is good medicine, but a crushed spirit dries up the bones."',
+      verseRef: 'Proverbs 17:22',
+      readingRef: 'John 15:9–12',
+      readingText:
+          '"As the Father has loved me, so have I loved you. Now remain in my love. If you keep my commands, you will remain in my love, just as I have kept my Father\'s commands and remain in his love. I have told you this so that my joy may be in you and that your joy may be complete."',
+      reflectionQuestion: 'How does the joy you carry today affect the people around you? Who needs to experience it?',
+      footerVerse: 'A joyful heart makes a cheerful face. — Proverbs 15:13',
+      gradientColors: [Color(0xFFF57F17), Color(0xFFFFD54F)],
+    ),
+    BreadContent(
+      tag: 'YET I WILL REJOICE',
+      heroTitle: 'True Joy Doesn\'t Need\nPerfect Circumstances',
+      verseText:
+          '"Though the fig tree does not bud and there are no grapes on the vines... yet I will rejoice in the Lord, I will be joyful in God my Savior."',
+      verseRef: 'Habakkuk 3:17–18',
+      readingRef: 'James 1:2–4',
+      readingText:
+          '"Consider it pure joy, my brothers and sisters, whenever you face trials of many kinds, because you know that the testing of your faith produces perseverance. Let perseverance finish its work so that you may be mature and complete, not lacking anything."',
+      reflectionQuestion: 'What can you find to rejoice about today even if circumstances aren\'t ideal?',
+      footerVerse: 'Rejoice in the Lord always. — Philippians 4:4',
+      gradientColors: [Color(0xFF558B2F), Color(0xFFAED581)],
+    ),
+    BreadContent(
+      tag: 'PRAISE HIS HOLY NAME',
+      heroTitle: 'Praise Is the Language\nof a Joyful Heart',
+      verseText:
+          '"Shout for joy to the Lord, all the earth! Worship the Lord with gladness; come before him with joyful songs."',
+      verseRef: 'Psalm 100:1–2',
+      readingRef: 'Psalm 150:1–6',
+      readingText:
+          '"Praise the Lord. Praise God in his sanctuary; praise him in his mighty heavens. Praise him for his acts of power; praise him for his surpassing greatness. Praise him with the sounding of the trumpet, praise him with the harp and lyre... Let everything that has breath praise the Lord. Praise the Lord."',
+      reflectionQuestion: 'What is one song, hymn, or prayer of praise you will offer to God today?',
+      footerVerse: 'Let everything that has breath praise the Lord! — Psalm 150:6',
+      gradientColors: [Color(0xFFE65100), Color(0xFFFFCC80)],
+    ),
+    BreadContent(
+      tag: 'FULLNESS OF JOY',
+      heroTitle: 'In His Presence Is\nFullness of Joy',
+      verseText:
+          '"You make known to me the path of life; in your presence there is fullness of joy; at your right hand are pleasures forevermore."',
+      verseRef: 'Psalm 16:11',
+      readingRef: 'Acts 2:25–28',
+      readingText:
+          '"I saw the Lord always before me. Because he is at my right hand, I will not be shaken. Therefore my heart is glad and my tongue rejoices; my body also will rest in hope... You have made known to me the paths of life; you will fill me with joy in your presence."',
+      reflectionQuestion: 'How does spending time in God\'s presence deepen or renew your joy today?',
+      footerVerse: 'In your presence there is fullness of joy. — Psalm 16:11',
+      gradientColors: [Color(0xFF880E4F), Color(0xFFF48FB1)],
+    ),
   ],
 
   // 2 – Grateful
@@ -170,6 +274,58 @@ final _content = [
       reflectionQuestion: 'How will you express gratitude to God — and to others — in a tangible way today?',
       footerVerse: 'Every good and perfect gift is from above. — James 1:17',
       gradientColors: [Color(0xFFD84315), Color(0xFFFF8A65)],
+    ),
+    BreadContent(
+      tag: 'ENTER WITH PRAISE',
+      heroTitle: 'Gratitude Opens the\nGates of His Presence',
+      verseText:
+          '"Enter his gates with thanksgiving and his courts with praise; give thanks to him and praise his name. For the Lord is good and his love endures forever."',
+      verseRef: 'Psalm 100:4–5',
+      readingRef: 'Psalm 9:1–4',
+      readingText:
+          '"I will give thanks to you, Lord, with all my heart; I will tell of all your wonderful deeds. I will be glad and rejoice in you; I will sing the praises of your name, O Most High. My enemies turn back; they stumble and perish before you."',
+      reflectionQuestion: 'How would approaching God with thanksgiving right now shift your heart\'s posture?',
+      footerVerse: 'Give thanks to him and praise his name. — Psalm 100:4',
+      gradientColors: [Color(0xFF1A237E), Color(0xFF7986CB)],
+    ),
+    BreadContent(
+      tag: 'GRATITUDE IN ALL THINGS',
+      heroTitle: 'Give Thanks Even\nWhen It Is Hard',
+      verseText:
+          '"And let the peace of Christ rule in your hearts, to which indeed you were called in one body. And be thankful."',
+      verseRef: 'Colossians 3:15',
+      readingRef: '1 Thessalonians 5:16–18',
+      readingText:
+          '"Rejoice always, pray continually, give thanks in all circumstances; for this is God\'s will for you in Christ Jesus." Three commands, one lifestyle: rejoice, pray, give thanks. Not when life is easy — in all circumstances.',
+      reflectionQuestion: 'What is the hardest thing for you to be grateful for right now? Bring it before God.',
+      footerVerse: 'Give thanks in all circumstances. — 1 Thessalonians 5:18',
+      gradientColors: [Color(0xFF004D40), Color(0xFF4DB6AC)],
+    ),
+    BreadContent(
+      tag: 'HE DID NOT WITHHOLD',
+      heroTitle: 'The Cross Proves He\nHolds Nothing Back',
+      verseText:
+          '"He who did not spare his own Son, but gave him up for us all — how will he not also, along with him, graciously give us all things?"',
+      verseRef: 'Romans 8:32',
+      readingRef: 'Ephesians 1:3–8',
+      readingText:
+          '"Praise be to the God and Father of our Lord Jesus Christ, who has blessed us in the heavenly realms with every spiritual blessing in Christ... In him we have redemption through his blood, the forgiveness of sins, in accordance with the riches of God\'s grace that he lavished on us."',
+      reflectionQuestion: 'Because of the cross, what can you be confident God will also provide for you today?',
+      footerVerse: 'He lavished on us the riches of his grace. — Ephesians 1:8',
+      gradientColors: [Color(0xFF311B92), Color(0xFFB39DDB)],
+    ),
+    BreadContent(
+      tag: 'MORNING MERCIES',
+      heroTitle: 'Every Morning Is a\nFresh Gift from God',
+      verseText:
+          '"The steadfast love of the Lord never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness."',
+      verseRef: 'Lamentations 3:22–23',
+      readingRef: 'Psalm 92:1–5',
+      readingText:
+          '"It is good to praise the Lord and make music to your name, O Most High, proclaiming your love in the morning and your faithfulness at night... For you make me glad by your deeds, Lord; I sing for joy at what your hands have done. How great are your works, Lord, how profound your thoughts!"',
+      reflectionQuestion: 'What\'s one mercy God gave you today — this morning — that you almost missed?',
+      footerVerse: 'His mercies are new every morning. — Lamentations 3:23',
+      gradientColors: [Color(0xFF827717), Color(0xFFF9A825)],
     ),
   ],
 
@@ -214,6 +370,58 @@ final _content = [
       footerVerse: 'My grace is sufficient for you. — 2 Corinthians 12:9',
       gradientColors: [Color(0xFF4E342E), Color(0xFF8D6E63)],
     ),
+    BreadContent(
+      tag: 'TRUST WITH ALL YOUR HEART',
+      heroTitle: 'Let Go of Your Own\nUnderstanding',
+      verseText:
+          '"Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight."',
+      verseRef: 'Proverbs 3:5–6',
+      readingRef: 'Psalm 46:1–7',
+      readingText:
+          '"God is our refuge and strength, an ever-present help in trouble. Therefore we will not fear, though the earth give way and the mountains fall into the heart of the sea, though its waters roar and foam and the mountains quake with their surging... The Lord Almighty is with us; the God of Jacob is our fortress."',
+      reflectionQuestion: 'What area of your life are you trying to control instead of trusting God with? Hand it over.',
+      footerVerse: 'He will make your paths straight. — Proverbs 3:6',
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF81C784)],
+    ),
+    BreadContent(
+      tag: 'DO NOT TROUBLE YOUR HEART',
+      heroTitle: 'Jesus Is the Answer\nto Every Anxious Thought',
+      verseText:
+          '"Do not let your hearts be troubled. You believe in God; believe also in me."',
+      verseRef: 'John 14:1',
+      readingRef: 'John 14:1–6',
+      readingText:
+          '"My Father\'s house has many rooms; if that were not so, would I have told you that I am going there to prepare a place for you? And if I go and prepare a place for you, I will come back and take you to be with me that you also may be where I am."',
+      reflectionQuestion: 'Jesus says "do not let your heart be troubled." What does it look like for you to choose that today?',
+      footerVerse: 'You believe in God; believe also in me. — John 14:1',
+      gradientColors: [Color(0xFF006064), Color(0xFF80DEEA)],
+    ),
+    BreadContent(
+      tag: 'STILL AND KNOW',
+      heroTitle: 'When the Storm Rages,\nBe Still',
+      verseText:
+          '"Be still, and know that I am God; I will be exalted among the nations, I will be exalted in the earth."',
+      verseRef: 'Psalm 46:10',
+      readingRef: 'Mark 4:35–41',
+      readingText:
+          '"He got up, rebuked the wind and said to the waves, \'Quiet! Be still!\' Then the wind died down and it was completely calm. He said to his disciples, \'Why are you so afraid? Do you still have no faith?\'"',
+      reflectionQuestion: 'In the middle of your storm, what would it look like to truly "be still" before God today?',
+      footerVerse: 'Even the winds and the waves obey him. — Mark 4:41',
+      gradientColors: [Color(0xFF0D47A1), Color(0xFF64B5F6)],
+    ),
+    BreadContent(
+      tag: 'LAID AT HIS FEET',
+      heroTitle: 'Every Burden Is\nWelcome at the Cross',
+      verseText:
+          '"Come to me, all you who are weary and burdened, and I will give you rest."',
+      verseRef: 'Matthew 11:28',
+      readingRef: 'Psalm 55:22',
+      readingText:
+          '"Cast your cares on the Lord and he will sustain you; he will never let the righteous be shaken." There is no burden too heavy for Jesus to carry. Whatever you are dragging today — lay it at His feet. He is not overwhelmed by your stress.',
+      reflectionQuestion: 'What specific burden will you physically imagine laying at Jesus\' feet right now?',
+      footerVerse: 'Cast your cares on the Lord. — Psalm 55:22',
+      gradientColors: [Color(0xFF3E2723), Color(0xFFA1887F)],
+    ),
   ],
 
   // 4 – Lonely
@@ -257,6 +465,58 @@ final _content = [
       footerVerse: 'The Lord is close to the brokenhearted. — Psalm 34:18',
       gradientColors: [Color(0xFF4A148C), Color(0xFFCE93D8)],
     ),
+    BreadContent(
+      tag: 'I WILL NOT LEAVE YOU',
+      heroTitle: 'He Has Promised to\nNever Walk Away',
+      verseText:
+          '"Be strong and courageous. Do not be afraid or terrified because of them, for the Lord your God goes with you; he will never leave you nor forsake you."',
+      verseRef: 'Deuteronomy 31:6',
+      readingRef: 'Joshua 1:7–9',
+      readingText:
+          '"Be strong and very courageous... Do not be afraid; do not be discouraged, for the Lord your God will be with you wherever you go." These were not words of wishful thinking — they were God\'s personal promise to Joshua, and to you.',
+      reflectionQuestion: 'God promises He goes with you. Where do you most need to feel His presence today?',
+      footerVerse: 'The Lord your God is with you wherever you go. — Joshua 1:9',
+      gradientColors: [Color(0xFF880E4F), Color(0xFFE91E63)],
+    ),
+    BreadContent(
+      tag: 'WITH ME ALWAYS',
+      heroTitle: 'Jesus Never Leaves\nYou to Walk Alone',
+      verseText:
+          '"And surely I am with you always, to the very end of the age."',
+      verseRef: 'Matthew 28:20',
+      readingRef: 'Psalm 23:1–6',
+      readingText:
+          '"Even though I walk through the darkest valley, I will fear no evil, for you are with me; your rod and your staff, they comfort me. You prepare a table before me in the presence of my enemies... Surely your goodness and love will follow me all the days of my life."',
+      reflectionQuestion: 'Jesus walks with you today. What conversation are you yet to have with Him about your loneliness?',
+      footerVerse: 'I am with you always. — Matthew 28:20',
+      gradientColors: [Color(0xFF1A237E), Color(0xFF42A5F5)],
+    ),
+    BreadContent(
+      tag: 'COMMUNITY IS GOD\'S GIFT',
+      heroTitle: 'You Were Made\nfor Connection',
+      verseText:
+          '"Two are better than one, because they have a good return for their labor: If either of them falls down, one can help the other up."',
+      verseRef: 'Ecclesiastes 4:9–10',
+      readingRef: 'Acts 2:42–47',
+      readingText:
+          '"They devoted themselves to the apostles\' teaching and to fellowship, to the breaking of bread and to prayer... All the believers were together and had everything in common... They broke bread in their homes and ate together with glad and sincere hearts, praising God and enjoying the favor of all the people."',
+      reflectionQuestion: 'Who in your church community can you reach out to today to break the cycle of loneliness?',
+      footerVerse: 'God sets the lonely in families. — Psalm 68:6',
+      gradientColors: [Color(0xFF004D40), Color(0xFF80CBC4)],
+    ),
+    BreadContent(
+      tag: 'CLOSE TO THE BROKENHEARTED',
+      heroTitle: 'He Draws Near When\nYou Feel Farthest Away',
+      verseText:
+          '"The Lord is close to the brokenhearted and saves those who are crushed in spirit."',
+      verseRef: 'Psalm 34:18',
+      readingRef: 'Psalm 34:15–22',
+      readingText:
+          '"The eyes of the Lord are on the righteous, and his ears are attentive to their cry... The righteous person may have many troubles, but the Lord delivers him from them all; he protects all his bones, not one of them will be broken. Evil will slay the wicked; the foes of the righteous will be condemned. The Lord will rescue his servants."',
+      reflectionQuestion: 'In what ways has God showed up for you in past moments of loneliness? Remember those now.',
+      footerVerse: 'The Lord is close to the brokenhearted. — Psalm 34:18',
+      gradientColors: [Color(0xFF37474F), Color(0xFF90A4AE)],
+    ),
   ],
 
   // 5 – Peaceful
@@ -299,6 +559,58 @@ final _content = [
       reflectionQuestion: 'Your peace is a gift from God. How is your peace a witness and blessing to others today?',
       footerVerse: 'Glory to God in the highest; on earth, peace. — Luke 2:14',
       gradientColors: [Color(0xFF0D47A1), Color(0xFF90CAF9)],
+    ),
+    BreadContent(
+      tag: 'JUSTIFIED BY FAITH',
+      heroTitle: 'Peace with God Is\nYour Firm Foundation',
+      verseText:
+          '"Therefore, since we have been justified through faith, we have peace with God through our Lord Jesus Christ."',
+      verseRef: 'Romans 5:1',
+      readingRef: 'Romans 5:1–5',
+      readingText:
+          '"We have peace with God through our Lord Jesus Christ, through whom we have gained access by faith into this grace in which we now stand. And we boast in the hope of the glory of God. Not only so, but we also glory in our sufferings, because we know that suffering produces perseverance; perseverance, character; and character, hope."',
+      reflectionQuestion: 'How does knowing you are at peace with God change how you see your circumstances today?',
+      footerVerse: 'We have peace with God through our Lord Jesus Christ. — Romans 5:1',
+      gradientColors: [Color(0xFF4A148C), Color(0xFF9C27B0)],
+    ),
+    BreadContent(
+      tag: 'THE BLESSING OF PEACE',
+      heroTitle: 'God\'s Face Is Turned\nToward You',
+      verseText:
+          '"The Lord bless you and keep you; the Lord make his face shine on you and be gracious to you; the Lord turn his face toward you and give you peace."',
+      verseRef: 'Numbers 6:24–26',
+      readingRef: 'John 20:19–21',
+      readingText:
+          '"On the evening of that first day of the week, when the disciples were together, with the doors locked for fear of the Jewish leaders, Jesus came and stood among them and said, \'Peace be with you!\' After he said this, he showed them his hands and side... Again Jesus said, \'Peace be with you! As the Father has sent me, I am sending you.\'"',
+      reflectionQuestion: 'Receive this blessing over your life today. How does it change your posture toward God and others?',
+      footerVerse: 'The Lord turn his face toward you and give you peace. — Numbers 6:26',
+      gradientColors: [Color(0xFF006064), Color(0xFF26C6DA)],
+    ),
+    BreadContent(
+      tag: 'PEACEFUL SURRENDER',
+      heroTitle: 'Surrender Is Not Defeat —\nIt Is Peace',
+      verseText:
+          '"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus."',
+      verseRef: 'Philippians 4:6–7',
+      readingRef: 'Psalm 131:1–3',
+      readingText:
+          '"My heart is not lifted up; my eyes are not raised too high; I do not occupy myself with things too great and too marvelous for me. But I have calmed and quieted my soul, like a weaned child with its mother; like a weaned child is my soul within me. O Israel, hope in the Lord from this time forth and forevermore."',
+      reflectionQuestion: 'Describe what a "calmed and quieted soul" looks like in your life. How do you get there today?',
+      footerVerse: 'The peace of God will guard your hearts. — Philippians 4:7',
+      gradientColors: [Color(0xFF37474F), Color(0xFF78909C)],
+    ),
+    BreadContent(
+      tag: 'DEEP ROOTS IN PEACE',
+      heroTitle: 'Let Your Peace Flow\nLike a River',
+      verseText:
+          '"If only you had paid attention to my commands, your peace would have been like a river, your well-being like the waves of the sea."',
+      verseRef: 'Isaiah 48:18',
+      readingRef: 'Isaiah 48:17–19',
+      readingText:
+          '"This is what the Lord says — your Redeemer, the Holy One of Israel: \'I am the Lord your God, who teaches you what is best for you, who directs you in the way you should go. If only you had paid attention to my commands, your peace would have been like a river, your well-being like the waves of the sea.\'"',
+      reflectionQuestion: 'Where has obedience to God brought you peace? How can that truth anchor you today?',
+      footerVerse: 'Your peace would have been like a river. — Isaiah 48:18',
+      gradientColors: [Color(0xFF1B5E20), Color(0xFF66BB6A)],
     ),
   ],
 ];

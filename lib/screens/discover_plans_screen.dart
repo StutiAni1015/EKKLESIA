@@ -117,7 +117,7 @@ class _DiscoverPlansScreenState extends State<DiscoverPlansScreen> {
           'Join our church in praying for unreached people groups across every continent.',
       duration: 'Ongoing',
       badge: null,
-      gradientStart: Color(0xFFEC5B13),
+      gradientStart: AppColors.primary,
       gradientEnd: Color(0xFFD4966B),
       durationIcon: Icons.public,
       todayReadings: [

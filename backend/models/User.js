@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema(
     // True when this user is also a pastor who created a church
     isPastor: { type: Boolean, default: false },
     avatarUrl: { type: String, default: "" },
+    // Pastor certification document
+    certificationUrl:       { type: String, default: null },
+    certificationInstitute: { type: String, default: "" },
+    // 'none' | 'pending' | 'verified'
+    certificationStatus:    { type: String, default: "none" },
     privacy: {
       showInDirectory:    { type: Boolean, default: true },
       allowPrayerTags:    { type: Boolean, default: true },

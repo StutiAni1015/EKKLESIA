@@ -14,6 +14,9 @@ import 'church_search_results_screen.dart';
 import 'church_committee_hub_screen.dart';
 import 'book_library_screen.dart';
 import 'location_currency_screen.dart';
+import 'child_selector_screen.dart';
+import 'ezer_screen.dart';
+import 'spiritual_focus_mode_screen.dart';
 // import 'global_prayer_map_screen.dart'; // temporarily disabled
 import '../widgets/tap_scale.dart';
 import '../service/api_service.dart';
@@ -57,29 +60,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.backgroundDark : _bgWarm;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(isDark),
-              _buildDailyBread(isDark),
-              _buildSpiritualJourney(isDark),
-              _buildDailyVerseCard(),
-              _buildQuickActions(isDark),
-              _buildUpcomingEvents(isDark),
-            ],
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: bg,
+          body: SafeArea(
+            bottom: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(isDark),
+                  _buildDailyBread(isDark),
+                  _buildSpiritualJourney(isDark),
+                  _buildDailyVerseCard(),
+                  _buildQuickActions(isDark),
+                  _buildUpcomingEventsEmpty(isDark),
+                ],
+              ),
+            ),
           ),
+          bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
+          floatingActionButton: buildCenterFab(context),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         ),
-      ),
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
-      floatingActionButton: buildCenterFab(context),
-      floatingActionButtonLocation:
-          FloatingActionButtonLocation.centerDocked,
+        const _EzerFloatingButton(),
+      ],
     );
   }
 
@@ -212,11 +219,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _IconBtn(
             icon: Icons.timer_outlined,
             isDark: isDark,
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Prayer timer coming soon!'),
-                behavior: SnackBarBehavior.floating,
-              ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SpiritualFocusModeScreen()),
             ),
           ),
         ],
@@ -729,6 +734,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _QuickAction(Icons.auto_stories, 'Book Library', _nudeBg, _nude,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const BookLibraryScreen()))),
+      _QuickAction(Icons.child_care, 'Kids\nMode',
+          const Color(0xFFFFFBEB), const Color(0xFFF59E0B),
+          () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ChildSelectorScreen()))),
     ];
 
     return Padding(
@@ -768,6 +777,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(height: 10),
                             Text(
                               a.label,
+                              textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -788,6 +798,90 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   // ─── Upcoming Events ─────────────────────────────────────────
+  Widget _buildUpcomingEventsEmpty(bool isDark) {
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'UPCOMING EVENTS',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ChurchEventsListScreen()),
+                ),
+                child: const Text(
+                  'VIEW ALL',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => const ChurchEventsListScreen()),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_outlined,
+                      size: 40, color: subColor.withOpacity(0.35)),
+                  const SizedBox(height: 10),
+                  Text(
+                    'No Upcoming Events',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: textColor),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Events created by your church will appear here.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: subColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildUpcomingEvents(bool isDark) {
     return ValueListenableBuilder<String>(
       valueListenable: userCountryNotifier,
@@ -1389,3 +1483,119 @@ class _EventCard extends StatelessWidget {
   }
 }
 
+// ── Draggable Ezer floating button ────────────────────────────────────────────
+
+class _EzerFloatingButton extends StatefulWidget {
+  const _EzerFloatingButton();
+
+  @override
+  State<_EzerFloatingButton> createState() => _EzerFloatingButtonState();
+}
+
+class _EzerFloatingButtonState extends State<_EzerFloatingButton>
+    with SingleTickerProviderStateMixin {
+  static const _size     = 56.0;
+  static const _edgeGap  = 16.0;
+  static const _bottomGap = 110.0; // above the bottom nav / FAB
+
+  Offset _pos = const Offset(-1, -1); // sentinel = not yet placed
+  bool _dragging = false;
+  late AnimationController _snapCtrl;
+  late Animation<Offset>   _snapAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _snapCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _snapAnim = Tween<Offset>(begin: Offset.zero, end: Offset.zero)
+        .animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.easeOutBack));
+    _snapCtrl.addListener(() => setState(() => _pos = _snapAnim.value));
+  }
+
+  @override
+  void dispose() {
+    _snapCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_pos == const Offset(-1, -1)) {
+      final size = MediaQuery.of(context).size;
+      // Default: bottom-right corner
+      _pos = Offset(size.width - _size - _edgeGap, size.height - _size - _bottomGap);
+    }
+  }
+
+  void _onPanUpdate(DragUpdateDetails d) {
+    if (!mounted) return;
+    setState(() {
+      _dragging = true;
+      _pos += d.delta;
+    });
+  }
+
+  void _onPanEnd(DragEndDetails _) {
+    _dragging = false;
+    final size = MediaQuery.of(context).size;
+    // Clamp vertically
+    final minY = MediaQuery.of(context).padding.top + _edgeGap;
+    final maxY = size.height - _size - _bottomGap;
+    final clampedY = _pos.dy.clamp(minY, maxY);
+    // Snap to nearest horizontal edge
+    final snapX = (_pos.dx < size.width / 2)
+        ? _edgeGap
+        : size.width - _size - _edgeGap;
+
+    final start = _pos;
+    final end   = Offset(snapX, clampedY);
+    _snapAnim = Tween<Offset>(begin: start, end: end)
+        .animate(CurvedAnimation(parent: _snapCtrl, curve: Curves.easeOutBack));
+    _snapCtrl.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: _pos.dx,
+      top:  _pos.dy,
+      child: GestureDetector(
+        onPanUpdate: _onPanUpdate,
+        onPanEnd:    _onPanEnd,
+        onTap: () {
+          if (!_dragging) {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const EzerScreen()));
+          }
+        },
+        child: AnimatedScale(
+          scale: _dragging ? 1.12 : 1.0,
+          duration: const Duration(milliseconds: 150),
+          child: Container(
+            width: _size,
+            height: _size,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7C3AED), Color(0xFFDB2777)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withAlpha(80),
+                  blurRadius: _dragging ? 24 : 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 26),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

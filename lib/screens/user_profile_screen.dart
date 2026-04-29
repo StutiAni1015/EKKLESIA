@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
 import '../widgets/app_bottom_bar.dart';
 import 'create_church_screen.dart';
+import 'find_your_church_screen.dart';
 import 'pastor_management_screen.dart';
 import 'welcome_screen.dart';
 import 'my_giving_dashboard_screen.dart';
@@ -21,12 +24,127 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _notificationsOn = true;
   bool _darkMode = false;
 
+  // Pastor certification
+  String _certStatus    = 'none'; // 'none' | 'pending' | 'verified'
+  String _certInstitute = '';
+  bool   _certUploading = false;
+
   @override
   void initState() {
     super.initState();
     // Refresh profile data every time this screen is opened so that isPastor,
     // name, bio and church info are always up-to-date.
     ApiService.fetchAndApplyProfile().catchError((_) {});
+    if (isPastorNotifier.value) _loadCertification();
+    _loadSavedPreferences();
+  }
+
+  Future<void> _loadSavedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lang   = prefs.getString('user_language');
+    final code   = prefs.getString('user_language_code');
+    final curr   = prefs.getString('user_currency');
+    final symbol = prefs.getString('user_currency_symbol');
+    if (lang   != null) userLanguageNotifier.value     = lang;
+    if (code   != null) userLanguageCodeNotifier.value = code;
+    if (curr   != null) userCurrencyNotifier.value     = curr;
+    if (symbol != null) userCurrencySymbolNotifier.value = symbol;
+  }
+
+  // ── Pastor certification ──────────────────────────────────────────────────
+
+  Future<void> _loadCertification() async {
+    try {
+      final data = await ApiService.getPastorCertification();
+      if (mounted) setState(() {
+        _certStatus    = data['certificationStatus'] as String? ?? 'none';
+        _certInstitute = data['certificationInstitute'] as String? ?? '';
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _uploadCertification() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final instituteCtrl = TextEditingController(text: _certInstitute);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Pastoral Certification',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Upload your certificate of completing a pastoral or theological degree from a recognised institute.',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: instituteCtrl,
+              decoration: InputDecoration(
+                labelText: 'Institute / College name',
+                hintText: 'e.g. Fuller Theological Seminary',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+            child: const Text('Choose File'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'webp'],
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.path == null) return;
+
+    setState(() => _certUploading = true);
+    try {
+      await ApiService.uploadPastorCertification(
+        file.path!,
+        institute: instituteCtrl.text.trim(),
+      );
+      if (mounted) {
+        setState(() {
+          _certStatus    = 'pending';
+          _certInstitute = instituteCtrl.text.trim();
+          _certUploading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Certification uploaded! It will be reviewed shortly.'),
+          backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _certUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Upload failed: $e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
   }
 
   // ── Edit profile sheet ────────────────────────────────────────────────────
@@ -202,6 +320,144 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ── Language picker ────────────────────────────────────────────────────────────
+  static const _languages = [
+    ('English',    'en',  '🇬🇧'),
+    ('French',     'fr',  '🇫🇷'),
+    ('Spanish',    'es',  '🇪🇸'),
+    ('Portuguese', 'pt',  '🇧🇷'),
+    ('Yoruba',     'yo',  '🇳🇬'),
+    ('Igbo',       'ig',  '🇳🇬'),
+    ('Hausa',      'ha',  '🇳🇬'),
+    ('Swahili',    'sw',  '🇰🇪'),
+    ('Amharic',    'am',  '🇪🇹'),
+    ('Zulu',       'zu',  '🇿🇦'),
+  ];
+
+  void _showLanguagePicker(BuildContext context, Color subColor, bool isDark, Color cardBg) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: cardBg,
+      builder: (_) => ValueListenableBuilder<String>(
+        valueListenable: userLanguageNotifier,
+        builder: (ctx, current, __) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text('Select Language',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B))),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: _languages.map((l) {
+                    final isSelected = l.$1 == current;
+                    return ListTile(
+                      leading: Text(l.$3, style: const TextStyle(fontSize: 22)),
+                      title: Text(l.$1, style: TextStyle(
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                          color: isSelected ? AppColors.primary : null)),
+                      trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                      onTap: () async {
+                        userLanguageNotifier.value     = l.$1;
+                        userLanguageCodeNotifier.value = l.$2;
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setString('user_language', l.$1);
+                        await prefs.setString('user_language_code', l.$2);
+                        if (context.mounted) Navigator.pop(context);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Currency picker ────────────────────────────────────────────────────────────
+  static const _currencies = [
+    ('USD', '\$',   'US Dollar',          '🇺🇸'),
+    ('EUR', '€',   'Euro',               '🇪🇺'),
+    ('GBP', '£',   'British Pound',      '🇬🇧'),
+    ('NGN', '₦',   'Nigerian Naira',     '🇳🇬'),
+    ('GHS', '₵',   'Ghanaian Cedi',      '🇬🇭'),
+    ('KES', 'KSh', 'Kenyan Shilling',    '🇰🇪'),
+    ('ZAR', 'R',   'South African Rand', '🇿🇦'),
+    ('CAD', 'CA\$','Canadian Dollar',    '🇨🇦'),
+    ('AUD', 'A\$', 'Australian Dollar',  '🇦🇺'),
+    ('XOF', 'CFA', 'West African Franc', '🌍'),
+    ('ETB', 'Br',  'Ethiopian Birr',     '🇪🇹'),
+    ('UGX', 'USh', 'Ugandan Shilling',   '🇺🇬'),
+  ];
+
+  void _showCurrencyPicker(BuildContext context, Color subColor, bool isDark, Color cardBg) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: cardBg,
+      isScrollControlled: true,
+      builder: (_) => ValueListenableBuilder<String>(
+        valueListenable: userCurrencyNotifier,
+        builder: (ctx, current, __) => SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 12),
+                Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                  child: Text('Select Currency',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : const Color(0xFF1E293B))),
+                ),
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: _currencies.map((c) {
+                      final isSelected = c.$1 == current;
+                      return ListTile(
+                        leading: Text(c.$4, style: const TextStyle(fontSize: 22)),
+                        title: Text('${c.$1} — ${c.$3}',
+                            style: TextStyle(
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                                color: isSelected ? AppColors.primary : null)),
+                        subtitle: Text(c.$2, style: TextStyle(color: subColor, fontSize: 12)),
+                        trailing: isSelected ? Icon(Icons.check_rounded, color: AppColors.primary) : null,
+                        onTap: () async {
+                          userCurrencyNotifier.value       = c.$1;
+                          userCurrencySymbolNotifier.value = c.$2;
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('user_currency', c.$1);
+                          await prefs.setString('user_currency_symbol', c.$2);
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -953,55 +1209,107 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ── Pastor Church section ─────────────────────────────────────
-              ValueListenableBuilder<ChurchProfile?>(
-                valueListenable: myChurchNotifier,
-                builder: (_, church, __) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _SectionHeader(label: 'My Church', subColor: subColor),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                        child: church == null
-                            ? _CreateChurchBanner(
-                                isDark: isDark,
-                                cardBg: cardBg,
-                                borderColor: borderColor,
-                                textColor: textColor,
-                                subColor: subColor,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => const CreateChurchScreen()),
-                                ),
-                              )
-                            : _MyChurchCard(
-                                church: church,
-                                isDark: isDark,
-                                cardBg: cardBg,
-                                borderColor: borderColor,
-                                textColor: textColor,
-                                subColor: subColor,
-                                onManageFeed: () {
-                                  final churchId = myChurchIdNotifier.value;
-                                  if (churchId == null) return;
-                                  Navigator.push(
+              // ── Church section ────────────────────────────────────────────
+              ValueListenableBuilder<bool>(
+                valueListenable: isPastorNotifier,
+                builder: (_, isPastor, __) =>
+                    ValueListenableBuilder<ChurchProfile?>(
+                  valueListenable: myChurchNotifier,
+                  builder: (_, church, __) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SectionHeader(label: 'My Church', subColor: subColor),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          child: isPastor
+                              // ── Pastor view ──────────────────────────────
+                              ? (church == null
+                                  ? _CreateChurchBanner(
+                                      isDark: isDark,
+                                      cardBg: cardBg,
+                                      borderColor: borderColor,
+                                      textColor: textColor,
+                                      subColor: subColor,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const CreateChurchScreen()),
+                                      ),
+                                    )
+                                  : _MyChurchCard(
+                                      church: church,
+                                      isDark: isDark,
+                                      cardBg: cardBg,
+                                      borderColor: borderColor,
+                                      textColor: textColor,
+                                      subColor: subColor,
+                                      onManageFeed: () {
+                                        final churchId =
+                                            myChurchIdNotifier.value;
+                                        if (churchId == null) return;
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                PastorManagementScreen(
+                                              churchId: churchId,
+                                              churchName: church.name,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ))
+                              // ── Normal member view ────────────────────────
+                              : _JoinChurchBanner(
+                                  isDark: isDark,
+                                  cardBg: cardBg,
+                                  borderColor: borderColor,
+                                  textColor: textColor,
+                                  subColor: subColor,
+                                  onTap: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => PastorManagementScreen(
-                                        churchId: churchId,
-                                        churchName: church.name,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-                  );
-                },
+                                        builder: (_) =>
+                                            const FindYourChurchScreen()),
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    );
+                  },
+                ),
+              ),
+
+              // ── Pastor Certification (pastors only) ──────────────────────
+              ValueListenableBuilder<bool>(
+                valueListenable: isPastorNotifier,
+                builder: (_, isPastor, __) => isPastor
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _SectionHeader(
+                              label: 'Pastoral Certification',
+                              subColor: subColor),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: _CertificationCard(
+                              isDark: isDark,
+                              cardBg: cardBg,
+                              borderColor: borderColor,
+                              textColor: textColor,
+                              subColor: subColor,
+                              status: _certStatus,
+                              institute: _certInstitute,
+                              uploading: _certUploading,
+                              onUpload: _uploadCertification,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
               ),
 
               // ── My Finances section ───────────────────────────────────────
@@ -1024,17 +1332,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           builder: (_) => const MyGivingDashboardScreen()),
                     ),
                   ),
-                  _SettingsTile(
-                    icon: Icons.account_balance_outlined,
-                    label: 'Church Treasury',
-                    labelColor: const Color(0xFFF59E0B),
-                    trailing: Icon(Icons.chevron_right, color: subColor, size: 18),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const TreasuryLockScreen()),
+                  // Treasury: visible only to pastor / committee / treasurer
+                  if (isPastorNotifier.value ||
+                      const {'committee', 'treasurer', 'secretary'}
+                          .contains(userMemberRoleNotifier.value))
+                    _SettingsTile(
+                      icon: Icons.account_balance_outlined,
+                      label: 'Church Treasury',
+                      labelColor: const Color(0xFFF59E0B),
+                      trailing: Icon(Icons.chevron_right, color: subColor, size: 18),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const TreasuryLockScreen()),
+                      ),
                     ),
-                  ),
                 ],
               ),
 
@@ -1059,15 +1371,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _SettingsTile(
                     icon: Icons.language,
                     label: 'Language',
-                    trailing: Text('English',
-                        style: TextStyle(fontSize: 13, color: subColor)),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Language settings coming soon!'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    trailing: ValueListenableBuilder<String>(
+                      valueListenable: userLanguageNotifier,
+                      builder: (_, lang, __) => Text(lang,
+                          style: TextStyle(fontSize: 13, color: subColor)),
                     ),
+                    onTap: () => _showLanguagePicker(context, subColor, isDark, cardBg),
                   ),
                   _SettingsTile(
                     icon: Icons.currency_exchange,
@@ -1077,13 +1386,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       builder: (_, currency, __) => Text(currency,
                           style: TextStyle(fontSize: 13, color: subColor)),
                     ),
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Currency settings coming soon!'),
-                        backgroundColor: AppColors.primary,
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    ),
+                    onTap: () => _showCurrencyPicker(context, subColor, isDark, cardBg),
                   ),
                 ],
               ),
@@ -1529,6 +1832,81 @@ class _CreateChurchBanner extends StatelessWidget {
   }
 }
 
+// ── Join Church banner (shown to normal members who haven't joined) ───────────
+
+class _JoinChurchBanner extends StatelessWidget {
+  final bool isDark;
+  final Color cardBg;
+  final Color borderColor;
+  final Color textColor;
+  final Color subColor;
+  final VoidCallback onTap;
+
+  const _JoinChurchBanner({
+    required this.isDark,
+    required this.cardBg,
+    required this.borderColor,
+    required this.textColor,
+    required this.subColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const green = Color(0xFF233523);
+    return TapScale(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: green.withAlpha(70),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: green.withAlpha(25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.church, color: green, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Join a Church',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Find and join your local church community.',
+                    style: TextStyle(fontSize: 12, color: subColor),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, size: 14, color: green),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── My Church card (shown after church is created) ────────────────────────────
 
 class _MyChurchCard extends StatelessWidget {
@@ -1784,6 +2162,123 @@ class _FaqTileState extends State<_FaqTile> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Pastor certification card ─────────────────────────────────────────────────
+
+class _CertificationCard extends StatelessWidget {
+  final bool isDark;
+  final Color cardBg;
+  final Color borderColor;
+  final Color textColor;
+  final Color subColor;
+  final String status;    // 'none' | 'pending' | 'verified'
+  final String institute;
+  final bool uploading;
+  final VoidCallback onUpload;
+
+  const _CertificationCard({
+    required this.isDark,
+    required this.cardBg,
+    required this.borderColor,
+    required this.textColor,
+    required this.subColor,
+    required this.status,
+    required this.institute,
+    required this.uploading,
+    required this.onUpload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon, label, desc) = switch (status) {
+      'verified' => (
+          const Color(0xFF10B981),
+          Icons.verified_rounded,
+          'Certification Verified',
+          institute.isNotEmpty ? institute : 'Your credential has been verified.',
+        ),
+      'pending' => (
+          const Color(0xFFF59E0B),
+          Icons.hourglass_top_rounded,
+          'Under Review',
+          institute.isNotEmpty
+              ? '$institute · Awaiting admin review'
+              : 'Your certificate is being reviewed.',
+        ),
+      _ => (
+          AppColors.primary,
+          Icons.upload_file_rounded,
+          'Upload Certification',
+          'Upload your pastoral degree or ordination certificate from a recognised institute.',
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withAlpha(60), width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withAlpha(25),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: uploading
+                ? Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: color),
+                  )
+                : Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: textColor)),
+                const SizedBox(height: 2),
+                Text(desc,
+                    style: TextStyle(fontSize: 11, color: subColor, height: 1.3)),
+              ],
+            ),
+          ),
+          if (status != 'verified') ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: uploading ? null : onUpload,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: color.withAlpha(60)),
+                ),
+                child: Text(
+                  status == 'pending' ? 'Re-upload' : 'Upload',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: color),
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

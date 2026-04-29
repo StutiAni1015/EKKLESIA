@@ -42,7 +42,7 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
   static const _topics = [
     _Topic('Faith', Icons.auto_awesome, Color(0xFFB2C2A3), Color(0xFF6B8F71)),
     _Topic('Love', Icons.favorite, Color(0xFFDCAE96), Color(0xFFA0522D)),
-    _Topic('Marriage', Icons.family_restroom, Color(0xFFF5E6DA), Color(0xFFEC5B13)),
+    _Topic('Marriage', Icons.family_restroom, Color(0xFFF5E6DA), AppColors.primary),
     _Topic('Purpose', Icons.explore, Color(0xFFB9D1EA), Color(0xFF4A7BA0)),
   ];
 
@@ -53,7 +53,7 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
       date: 'Oct 12, 2023',
       duration: '52m',
       category: 'Faith',
-      gradientStart: Color(0xFFEC5B13),
+      gradientStart: AppColors.primary,
       gradientEnd: Color(0xFFD4966B),
     ),
     _SavedSermon(

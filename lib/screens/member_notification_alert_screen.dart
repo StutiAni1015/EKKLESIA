@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../service/api_service.dart';
 
 class MemberNotificationAlertScreen extends StatefulWidget {
   const MemberNotificationAlertScreen({super.key});
@@ -13,76 +14,23 @@ class _MemberNotificationAlertScreenState
     extends State<MemberNotificationAlertScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _entryCtrl;
-  late final Animation<Offset> _slide;
-  late final Animation<double> _fade;
+  late final Animation<Offset>   _slide;
+  late final Animation<double>   _fade;
 
-  int _selectedIndex = 0;
-
-  // Indices the user has dismissed/read
-  final Set<int> _readIndices = {};
-
-  static const _notifications = [
-    _NotifData(
-      church: 'Grace Global Church',
-      icon: Icons.church,
-      iconColor: Color(0xFFEC5B13),
-      title: 'Sunday Service Reminder',
-      body:
-          'Join us this Sunday at 9:00 AM for our weekly worship service. Pastor Samuel will be preaching on "Walking in Faith." Bring a friend!',
-      time: 'Just now',
-      category: 'Service',
-      categoryColor: Color(0xFFEC5B13),
-      isNew: true,
-    ),
-    _NotifData(
-      church: 'Grace Global Church',
-      icon: Icons.favorite,
-      iconColor: Color(0xFFEC4899),
-      title: 'New Prayer Request',
-      body:
-          'A member of your community has shared a prayer request. Tap to read and pray along with the community.',
-      time: '2 hours ago',
-      category: 'Prayer',
-      categoryColor: Color(0xFFEC4899),
-      isNew: true,
-    ),
-    _NotifData(
-      church: 'Grace Global Church',
-      icon: Icons.event,
-      iconColor: Color(0xFF3B82F6),
-      title: 'Youth Camp Registration Open',
-      body:
-          'Registration for the Annual Youth Camp is now open! Spaces are limited — sign up before March 25 to secure your spot.',
-      time: 'Yesterday',
-      category: 'Event',
-      categoryColor: Color(0xFF3B82F6),
-      isNew: false,
-    ),
-    _NotifData(
-      church: 'Grace Global Church',
-      icon: Icons.volunteer_activism,
-      iconColor: Color(0xFF22C55E),
-      title: 'Giving Campaign — Q2',
-      body:
-          'Our Q2 giving campaign is live! Your generosity helps us reach more people with the gospel. Every contribution matters.',
-      time: '2 days ago',
-      category: 'Giving',
-      categoryColor: Color(0xFF22C55E),
-      isNew: false,
-    ),
-  ];
+  List<Map<String, dynamic>> _notifications = [];
+  bool _loading = true;
+  final Set<String> _readIds = {};
+  int _expandedIdx = -1;
 
   @override
   void initState() {
     super.initState();
-    _entryCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 500));
-    _slide = Tween<Offset>(
-            begin: const Offset(0, 0.12), end: Offset.zero)
-        .animate(CurvedAnimation(
-            parent: _entryCtrl, curve: Curves.easeOutCubic));
+    _entryCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeIn);
     _entryCtrl.forward();
+    _load();
   }
 
   @override
@@ -91,18 +39,64 @@ class _MemberNotificationAlertScreenState
     super.dispose();
   }
 
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final list = await ApiService.getNotifications();
+      if (mounted) {
+        setState(() => _notifications = list.cast<Map<String, dynamic>>());
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _markRead(String id) async {
+    setState(() => _readIds.add(id));
+    try { await ApiService.markNotificationRead(id); } catch (_) {}
+  }
+
+  Future<void> _markAllRead() async {
+    final unread = _notifications.where((n) => !(n['read'] as bool? ?? false) && !_readIds.contains(n['_id'] as String));
+    for (final n in unread) { _markRead(n['_id'] as String); }
+  }
+
+  // ── Map type to icon / colour ────────────────────────────────────────────────
+  static (IconData, Color, String) _typeStyle(String? type) => switch (type) {
+    'announcement' => (Icons.campaign_rounded,        AppColors.primary,          'Announcement'),
+    'event'        => (Icons.event_rounded,            const Color(0xFF3B82F6),   'Event'),
+    'prayer'       => (Icons.favorite_rounded,         const Color(0xFFEC4899),   'Prayer'),
+    'like'         => (Icons.thumb_up_rounded,         const Color(0xFF22C55E),   'Like'),
+    'comment'      => (Icons.comment_rounded,          const Color(0xFF8B5CF6),   'Comment'),
+    'join_request' => (Icons.person_add_rounded,       const Color(0xFFF59E0B),   'Request'),
+    'join_approved'=> (Icons.check_circle_rounded,     const Color(0xFF22C55E),   'Approved'),
+    'join_rejected'=> (Icons.cancel_rounded,           const Color(0xFFEF4444),   'Rejected'),
+    _              => (Icons.notifications_rounded,    AppColors.primary,          'Notice'),
+  };
+
+  static String _timeAgo(String? iso) {
+    if (iso == null) return '';
+    final dt   = DateTime.tryParse(iso);
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 60)  return 'Just now';
+    if (diff.inMinutes < 60)  return '${diff.inMinutes}m ago';
+    if (diff.inHours   < 24)  return '${diff.inHours}h ago';
+    if (diff.inDays    < 7)   return '${diff.inDays}d ago';
+    return '${(diff.inDays / 7).floor()}w ago';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? AppColors.backgroundDark : const Color(0xFFF6F6F8);
-    final cardBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final isDark    = Theme.of(context).brightness == Brightness.dark;
+    final bg        = isDark ? AppColors.backgroundDark : const Color(0xFFF6F6F8);
+    final cardBg    = isDark ? const Color(0xFF1E293B) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1F2937);
-    final subColor =
-        isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+    final subColor  = isDark ? const Color(0xFF94A3B8) : const Color(0xFF6B7280);
+
     final newCount = _notifications
-        .asMap()
-        .entries
-        .where((e) => e.value.isNew && !_readIndices.contains(e.key))
+        .where((n) => !(n['read'] as bool? ?? false) && !_readIds.contains(n['_id'] as String))
         .length;
 
     return Scaffold(
@@ -110,7 +104,7 @@ class _MemberNotificationAlertScreenState
       body: SafeArea(
         child: Column(
           children: [
-            // Header
+            // ── Header ────────────────────────────────────────────────────
             Container(
               color: isDark ? const Color(0xFF0F172A) : Colors.white,
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -118,38 +112,23 @@ class _MemberNotificationAlertScreenState
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.maybePop(context),
-                    child: Icon(Icons.arrow_back,
-                        color: AppColors.primary, size: 24),
+                    child: Icon(Icons.arrow_back, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    'Notifications',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
-                    ),
-                  ),
+                  Text('Notifications',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                   const Spacer(),
                   if (newCount > 0)
                     GestureDetector(
-                      onTap: () => setState(() => _readIndices.addAll(
-                            List.generate(_notifications.length, (i) => i),
-                          )),
-                      child: Text(
-                        'Mark all read',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      onTap: _markAllRead,
+                      child: Text('Mark all read',
+                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
             ),
 
-            // New badge banner
+            // ── New badge banner ──────────────────────────────────────────
             if (newCount > 0)
               FadeTransition(
                 opacity: _fade,
@@ -157,48 +136,28 @@ class _MemberNotificationAlertScreenState
                   position: _slide,
                   child: Container(
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withOpacity(0.12),
-                          AppColors.primary.withOpacity(0.04),
-                        ],
-                      ),
+                      gradient: LinearGradient(colors: [
+                        AppColors.primary.withAlpha(30),
+                        AppColors.primary.withAlpha(10),
+                      ]),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppColors.primary.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.primary.withAlpha(50)),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '$newCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                          child: Text('$newCount',
+                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(width: 10),
-                        Text(
-                          '$newCount new notification${newCount > 1 ? 's' : ''} from your church',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                        ),
+                        Text('$newCount new notification${newCount > 1 ? 's' : ''}',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
                         const Spacer(),
-                        Icon(Icons.notifications_active,
-                            color: AppColors.primary, size: 16),
+                        Icon(Icons.notifications_active, color: AppColors.primary, size: 16),
                       ],
                     ),
                   ),
@@ -207,268 +166,151 @@ class _MemberNotificationAlertScreenState
 
             const SizedBox(height: 12),
 
-            // Notification list
+            // ── List ──────────────────────────────────────────────────────
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                itemCount: _notifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final n = _notifications[i];
-                  final isNew = n.isNew && !_readIndices.contains(i);
-                  final isSelected = i == _selectedIndex;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedIndex = i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isNew
-                              ? AppColors.primary.withOpacity(0.25)
-                              : (isDark
-                                  ? const Color(0xFF334155)
-                                  : const Color(0xFFE5E7EB)),
-                          width: isNew ? 1.5 : 1,
-                        ),
-                        boxShadow: isNew
-                            ? [
-                                BoxShadow(
-                                  color:
-                                      AppColors.primary.withOpacity(0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Icon circle
-                                Container(
-                                  width: 44,
-                                  height: 44,
+              child: _loading
+                  ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  : _notifications.isEmpty
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.notifications_off_outlined, size: 56, color: subColor),
+                            const SizedBox(height: 12),
+                            Text('No notifications yet',
+                                style: TextStyle(fontSize: 15, color: subColor, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 6),
+                            Text('Church announcements and events\nwill appear here.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 13, color: subColor)),
+                          ],
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          color: AppColors.primary,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                            itemCount: _notifications.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (context, i) {
+                              final n       = _notifications[i];
+                              final id      = n['_id'] as String? ?? '';
+                              final isNew   = !(n['read'] as bool? ?? false) && !_readIds.contains(id);
+                              final isOpen  = i == _expandedIdx;
+                              final (icon, color, cat) = _typeStyle(n['type'] as String?);
+                              final title   = n['title'] as String? ?? n['type'] ?? 'Notification';
+                              final body    = n['message'] as String? ?? '';
+                              final timeStr = _timeAgo(n['createdAt'] as String?);
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() => _expandedIdx = isOpen ? -1 : i);
+                                  if (isNew) _markRead(id);
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
                                   decoration: BoxDecoration(
-                                    color:
-                                        n.iconColor.withOpacity(0.12),
-                                    shape: BoxShape.circle,
+                                    color: cardBg,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isNew
+                                          ? AppColors.primary.withAlpha(64)
+                                          : (isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB)),
+                                      width: isNew ? 1.5 : 1,
+                                    ),
+                                    boxShadow: isNew
+                                        ? [BoxShadow(color: AppColors.primary.withAlpha(15), blurRadius: 12, offset: const Offset(0, 4))]
+                                        : null,
                                   ),
-                                  child: Icon(n.icon,
-                                      color: n.iconColor, size: 22),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              n.title,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w700,
-                                                color: textColor,
-                                              ),
-                                            ),
-                                          ),
-                                          if (isNew)
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                             Container(
-                                              width: 8,
-                                              height: 8,
-                                              margin: const EdgeInsets.only(
-                                                  left: 6, top: 3),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.primary,
-                                                shape: BoxShape.circle,
+                                              width: 44, height: 44,
+                                              decoration: BoxDecoration(color: color.withAlpha(30), shape: BoxShape.circle),
+                                              child: Icon(icon, color: color, size: 22),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(title,
+                                                            style: TextStyle(
+                                                                fontSize: 14, fontWeight: FontWeight.w700, color: textColor)),
+                                                      ),
+                                                      if (isNew)
+                                                        Container(
+                                                          width: 8, height: 8,
+                                                          margin: const EdgeInsets.only(left: 6, top: 3),
+                                                          decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                  if (n['church'] != null) ...[
+                                                    const SizedBox(height: 2),
+                                                    Text('Your Church',
+                                                        style: TextStyle(fontSize: 11, color: subColor, fontWeight: FontWeight.w500)),
+                                                  ],
+                                                ],
                                               ),
                                             ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        n.church,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: subColor,
-                                          fontWeight: FontWeight.w500,
+                                      if (body.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+                                          child: Text(body,
+                                              style: TextStyle(fontSize: 13, height: 1.55,
+                                                  color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF374151)),
+                                              maxLines: isOpen ? null : 2,
+                                              overflow: isOpen ? TextOverflow.visible : TextOverflow.ellipsis),
+                                        ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: color.withAlpha(25), borderRadius: BorderRadius.circular(20),
+                                              ),
+                                              child: Text(cat,
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+                                            ),
+                                            const Spacer(),
+                                            Text(timeStr, style: TextStyle(fontSize: 11, color: subColor)),
+                                            if (isNew) ...[
+                                              const SizedBox(width: 10),
+                                              GestureDetector(
+                                                onTap: () => _markRead(id),
+                                                child: Text('Dismiss',
+                                                    style: TextStyle(fontSize: 11, color: subColor,
+                                                        decoration: TextDecoration.underline)),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(14, 10, 14, 0),
-                            child: Text(
-                              n.body,
-                              style: TextStyle(
-                                fontSize: 13,
-                                height: 1.55,
-                                color: isDark
-                                    ? const Color(0xFFCBD5E1)
-                                    : const Color(0xFF374151),
-                              ),
-                              maxLines: isSelected ? null : 2,
-                              overflow: isSelected
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: n.categoryColor
-                                        .withOpacity(0.1),
-                                    borderRadius:
-                                        BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    n.category,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: n.categoryColor,
-                                    ),
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  n.time,
-                                  style: TextStyle(
-                                      fontSize: 11, color: subColor),
-                                ),
-                                if (isNew) ...[
-                                  const SizedBox(width: 10),
-                                  GestureDetector(
-                                    onTap: () => setState(
-                                        () => _readIndices.add(i)),
-                                    child: Text(
-                                      'Dismiss',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: subColor,
-                                        decoration:
-                                            TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          if (isSelected && isNew)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _readIndices.add(i)),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: isDark
-                                              ? const Color(0xFF0F172A)
-                                              : const Color(0xFFF1F5F9),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          'View Details',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: textColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () =>
-                                          setState(() => _readIndices.add(i)),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 10),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: const Text(
-                                          'Respond',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
             ),
           ],
         ),
       ),
     );
   }
-}
-
-class _NotifData {
-  final String church;
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String body;
-  final String time;
-  final String category;
-  final Color categoryColor;
-  final bool isNew;
-
-  const _NotifData({
-    required this.church,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.body,
-    required this.time,
-    required this.category,
-    required this.categoryColor,
-    required this.isNew,
-  });
 }
