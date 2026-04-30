@@ -1,9 +1,9 @@
 import 'dart:math' as math;
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../core/app_colors.dart';
 import 'member_verification_successful_screen.dart';
-import 'church_member_verification_screen.dart';
 import 'otp_verification_screen.dart';
 import '../core/user_session.dart';
 
@@ -24,6 +24,8 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   bool _scanning = false;
+  CameraController? _camCtrl;
+  bool _cameraReady = false;
 
   static const sage = Color(0xFFB6C9BB);
   static const babyBlue = Color(0xFFB9CFDF);
@@ -37,42 +39,68 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
     );
     _ctrl.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        final success = math.Random().nextDouble() > 0.25;
         if (!mounted) return;
-        if (success) {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => OtpVerificationScreen(
-                title: 'Identity Verification',
-                verificationTarget: 'registered contact',
-                onVerified: () {
-                  faceVerifiedNotifier.value = true;
-                  if (widget.onSuccess != null) {
-                    widget.onSuccess!();
-                  } else {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              const MemberVerificationSuccessfulScreen()),
-                    );
-                  }
-                },
-              ),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => OtpVerificationScreen(
+              title: 'Identity Verification',
+              verificationTarget: 'registered contact',
+              onVerified: () {
+                faceVerifiedNotifier.value = true;
+                if (widget.onSuccess != null) {
+                  widget.onSuccess!();
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            const MemberVerificationSuccessfulScreen()),
+                  );
+                }
+              },
             ),
-          );
-        } else {
-          _showRetrySheet();
-        }
+          ),
+        );
       }
     });
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final status = await Permission.camera.request();
+      if (!status.isGranted) return;
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      final front = cameras.firstWhere(
+        (c) => c.lensDirection == CameraLensDirection.front,
+        orElse: () => cameras.first,
+      );
+      final ctrl = CameraController(
+        front,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+      await ctrl.initialize();
+      if (!mounted) {
+        ctrl.dispose();
+        return;
+      }
+      setState(() {
+        _camCtrl = ctrl;
+        _cameraReady = true;
+      });
+    } catch (_) {
+      // Camera unavailable on simulator — fall back to illustration
+    }
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _camCtrl?.dispose();
     super.dispose();
   }
 
@@ -83,150 +111,7 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
     _ctrl.forward(from: 0);
   }
 
-  void _showPermissionDeniedDialog({required bool permanent}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor:
-            isDark ? const Color(0xFF1E293B) : Colors.white,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Camera Access Required',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          permanent
-              ? 'Camera permission was permanently denied. Please enable it in Settings to use facial verification.'
-              : 'Camera access is needed to scan your face for identity verification.',
-          style: const TextStyle(height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: sage,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              if (permanent) openAppSettings();
-            },
-            child: Text(permanent ? 'Open Settings' : 'OK'),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showRetrySheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        final isDark =
-            Theme.of(context).brightness == Brightness.dark;
-        final sheetBg =
-            isDark ? const Color(0xFF1E293B) : Colors.white;
-        return Container(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 36),
-          decoration: BoxDecoration(
-            color: sheetBg,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.no_photography_outlined,
-                    color: Color(0xFFEF4444), size: 36),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Scan Unsuccessful',
-                style: TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'We couldn\'t verify your face clearly. Please ensure good lighting and look directly at the camera.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13,
-                    color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF6B7280),
-                    height: 1.5),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    setState(() => _scanning = false);
-                  },
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Try Again'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: sage,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            const ChurchMemberVerificationScreen()),
-                  );
-                },
-                child: Text(
-                  'Update ID Details',
-                  style: TextStyle(
-                    color: isDark
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -340,65 +225,62 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
                               ),
                             ),
                             // Camera view oval
-                            Container(
-                              width: 200,
-                              height: 200,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: isDark
-                                      ? [
-                                          const Color(0xFF1E293B),
-                                          const Color(0xFF0F172A),
-                                        ]
-                                      : [
-                                          const Color(0xFFDCEBF5),
-                                          const Color(0xFFE8F0E9),
-                                        ],
-                                ),
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Face guide dashes
-                                  CustomPaint(
-                                    size: const Size(200, 200),
-                                    painter:
-                                        _FaceGuidePainter(isDark: isDark),
-                                  ),
-                                  Icon(
-                                    Icons.face_retouching_natural,
-                                    size: 72,
-                                    color: sage.withOpacity(0.5),
-                                  ),
-                                  if (_scanning)
-                                    Positioned(
-                                      bottom: 16,
-                                      child: Container(
-                                        padding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: sage,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                            ClipOval(
+                              child: SizedBox(
+                                width: 200,
+                                height: 200,
+                                child: _cameraReady
+                                    ? FittedBox(
+                                        fit: BoxFit.cover,
+                                        child: SizedBox(
+                                          width: _camCtrl!.value.previewSize!.height,
+                                          height: _camCtrl!.value.previewSize!.width,
+                                          child: CameraPreview(_camCtrl!),
                                         ),
-                                        child: Text(
-                                          '${(_ctrl.value * 100).round()}% Scanned',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
+                                      )
+                                    : Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: isDark
+                                                ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                                                : [const Color(0xFFDCEBF5), const Color(0xFFE8F0E9)],
                                           ),
                                         ),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            CustomPaint(
+                                              size: const Size(200, 200),
+                                              painter: _FaceGuidePainter(isDark: isDark),
+                                            ),
+                                            Icon(Icons.face_retouching_natural,
+                                                size: 72, color: sage.withOpacity(0.5)),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                ],
                               ),
                             ),
+                            if (_scanning)
+                              Positioned(
+                                bottom: 24,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: sage,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${(_ctrl.value * 100).round()}% Scanned',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         );
                       },

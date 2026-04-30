@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../service/api_service.dart';
 import '../widgets/app_bottom_bar.dart';
+import 'my_spiritual_journal_screen.dart';
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 const _violet     = Color(0xFF7C3AED);
@@ -165,10 +166,18 @@ class _EzerScreenState extends State<EzerScreen>
           _messages[index] = msg.copyWith(isSaved: true);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Saved to your journal ✓'),
+          SnackBar(
+            content: const Text('Saved to your journal ✓'),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFF7C3AED),
+            backgroundColor: const Color(0xFF7C3AED),
+            action: SnackBarAction(
+              label: 'View',
+              textColor: Colors.white,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MySpiritualJournalScreen()),
+              ),
+            ),
           ),
         );
       }
