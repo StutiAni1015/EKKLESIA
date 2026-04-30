@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../screens/add_prayer_request_screen.dart';
 import '../screens/bible_books_index_screen.dart';
-import '../screens/dashboard_screen.dart';
 import '../screens/my_church_daily_screen.dart';
 import '../screens/lyrics_screen.dart';
 import '../screens/user_profile_screen.dart';
@@ -122,33 +121,14 @@ class AppBottomBar extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     if (index == activeIndex) return;
     switch (index) {
-      case kTabHome:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-          (route) => false,
-        );
-        break;
       case kTabCommunity:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const MyChurchDailyScreen()),
-          (route) => false,
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const MyChurchDailyScreen()));
         break;
       case kTabLyrics:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const LyricsScreen()),
-          (route) => false,
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const LyricsScreen()));
         break;
       case kTabProfile:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const UserProfileScreen()),
-          (route) => false,
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const UserProfileScreen()));
         break;
     }
   }
