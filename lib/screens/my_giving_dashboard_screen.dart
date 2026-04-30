@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'create_giving_request_screen.dart';
 import 'location_currency_screen.dart';
 
@@ -37,9 +36,6 @@ class _MyGivingDashboardScreenState extends State<MyGivingDashboardScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabProfile),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabProfile),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(

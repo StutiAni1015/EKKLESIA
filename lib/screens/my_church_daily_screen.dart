@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'join_a_church_screen.dart';
 import 'following_feed_screen.dart';
 import 'bible_books_index_screen.dart';
@@ -420,9 +419,6 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -1422,7 +1418,7 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
               ],
             ),
 
-            // Bottom nav is handled by AppBottomBar in Scaffold.bottomNavigationBar
+
           ],
         ),
       ),

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import 'bible_selection_grid_screen.dart';
-import 'dashboard_screen.dart';
-import 'my_church_daily_screen.dart';
 
 class BibleBooksIndexScreen extends StatefulWidget {
   const BibleBooksIndexScreen({super.key});
@@ -432,81 +430,6 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
         ),
       ),
 
-      // Bottom nav
-      bottomNavigationBar: Container(
-        color: isDark
-            ? AppColors.backgroundDark.withOpacity(0.95)
-            : Colors.white.withOpacity(0.95),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 64,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _NavItem(
-                    icon: Icons.home_outlined,
-                    label: 'Home',
-                    active: false,
-                    color: subColor,
-                    onTap: () => Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                      (route) => false,
-                    )),
-                // Elevated Bible FAB
-                Transform.translate(
-                  offset: const Offset(0, -16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  AppColors.primary.withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.menu_book,
-                            color: Colors.white, size: 26),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'BIBLE',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _NavItem(
-                    icon: Icons.groups_outlined,
-                    label: 'Church',
-                    active: false,
-                    color: subColor,
-                    onTap: () => Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MyChurchDailyScreen()),
-                      (route) => false,
-                    )),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -557,44 +480,3 @@ class _Tab extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool active;
-  final Color color;
-  final VoidCallback? onTap;
-  const _NavItem(
-      {required this.icon,
-      required this.label,
-      required this.active,
-      required this.color,
-      this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                color: active ? AppColors.primary : color, size: 24),
-            const SizedBox(height: 2),
-            Text(
-              label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.8,
-                color: active ? AppColors.primary : color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

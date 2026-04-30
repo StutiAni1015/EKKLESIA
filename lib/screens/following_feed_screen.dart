@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'sermon_player_screen.dart';
 
 const _sage = Color(0xFFB2B8A3);
@@ -37,9 +36,6 @@ class _FollowingFeedScreenState extends State<FollowingFeedScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(

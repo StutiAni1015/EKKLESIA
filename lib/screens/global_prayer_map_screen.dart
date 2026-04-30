@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'submit_global_prayer_screen.dart';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
@@ -98,9 +97,6 @@ class _GlobalPrayerMapScreenState extends State<GlobalPrayerMapScreen>
 
     return Scaffold(
       backgroundColor: Colors.black,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: CustomScrollView(

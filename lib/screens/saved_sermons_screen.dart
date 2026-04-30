@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'sermon_player_screen.dart';
 
 class SavedSermonsScreen extends StatefulWidget {
@@ -104,9 +103,6 @@ class _SavedSermonsScreenState extends State<SavedSermonsScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
-      floatingActionButton: buildCenterFab(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(

@@ -3,9 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
-import '../widgets/app_bottom_bar.dart';
-
-const kTabLyrics = 3; // slot in bottom nav
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -166,9 +163,6 @@ class _LyricsScreenState extends State<LyricsScreen>
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabLyrics),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabLyrics),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Column(

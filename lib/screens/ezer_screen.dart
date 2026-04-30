@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../service/api_service.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'my_spiritual_journal_screen.dart';
 
 // ─── Palette ────────────────────────────────────────────────────────────────
@@ -210,7 +209,6 @@ class _EzerScreenState extends State<EzerScreen>
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
       floatingActionButton: FloatingActionButton(
         heroTag: 'center_fab',
         onPressed: null, // already on Ezer — no action
@@ -233,7 +231,6 @@ class _EzerScreenState extends State<EzerScreen>
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Column(

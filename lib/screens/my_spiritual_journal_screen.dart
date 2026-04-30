@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../service/api_service.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'new_journal_entry_screen.dart';
 
 class MySpiritualJournalScreen extends StatefulWidget {
@@ -57,9 +56,6 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabHome),
-      floatingActionButton: buildCenterFab(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(

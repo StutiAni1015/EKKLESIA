@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'add_prayer_request_screen.dart';
 import 'spiritual_focus_mode_screen.dart';
 
@@ -689,9 +688,6 @@ class _PrayerHeartbeatScreenState extends State<PrayerHeartbeatScreen>
         ),
       ),
 
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }

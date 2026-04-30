@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
 import '../service/api_service.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'create_church_screen.dart';
 import 'find_your_church_screen.dart';
 import 'pastor_management_screen.dart';
@@ -805,9 +804,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: AppBottomBar(activeIndex: kTabProfile),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabProfile),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(

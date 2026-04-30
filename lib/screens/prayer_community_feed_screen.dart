@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
-import '../widgets/app_bottom_bar.dart';
 import 'add_prayer_request_screen.dart';
 import 'bible_books_index_screen.dart';
 import 'find_your_church_screen.dart';
@@ -394,9 +393,6 @@ class _PrayerCommunityFeedScreenState extends State<PrayerCommunityFeedScreen>
 
     return Scaffold(
       backgroundColor: bg,
-      bottomNavigationBar: const AppBottomBar(activeIndex: kTabCommunity),
-      floatingActionButton: buildCenterFab(context, activeIndex: kTabCommunity),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       body: SafeArea(
         bottom: false,
         child: Stack(
