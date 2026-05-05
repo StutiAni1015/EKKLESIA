@@ -16,8 +16,11 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
   late final TabController _tabController;
 
   List<Map<String, dynamic>> _entries = [];
+  List<Map<String, dynamic>> _filteredEntries = [];
   bool _loading = true;
   String? _error;
+  final TextEditingController _searchCtrl = TextEditingController();
+  bool _searchActive = false;
 
   @override
   void initState() {
@@ -32,6 +35,7 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
       final data = await ApiService.getJournals();
       setState(() {
         _entries = data.cast<Map<String, dynamic>>();
+        _filteredEntries = _entries;
         _loading = false;
       });
     } catch (e) {
@@ -39,9 +43,23 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
     }
   }
 
+  void _applySearch(String query) {
+    final q = query.toLowerCase().trim();
+    setState(() {
+      _filteredEntries = q.isEmpty
+          ? _entries
+          : _entries.where((e) {
+              final title = (e['title'] as String? ?? '').toLowerCase();
+              final body  = (e['body']  as String? ?? '').toLowerCase();
+              return title.contains(q) || body.contains(q);
+            }).toList();
+    });
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -113,21 +131,41 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
-                                icon: const Icon(Icons.search,
+                                icon: Icon(_searchActive ? Icons.close : Icons.search,
                                     color: AppColors.primary, size: 20),
-                                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Search journals coming soon!'),
-                                    backgroundColor: AppColors.primary,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchActive = !_searchActive;
+                                    if (!_searchActive) {
+                                      _searchCtrl.clear();
+                                      _filteredEntries = _entries;
+                                    }
+                                  });
+                                },
                                 padding: EdgeInsets.zero,
                               ),
                             ),
                           ],
                         ),
                       ),
+                      if (_searchActive)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                          child: TextField(
+                            controller: _searchCtrl,
+                            autofocus: true,
+                            onChanged: _applySearch,
+                            decoration: InputDecoration(
+                              hintText: 'Search journals…',
+                              hintStyle: TextStyle(color: subColor, fontSize: 14),
+                              prefixIcon: const Icon(Icons.search, color: AppColors.primary, size: 18),
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
                       TabBar(
                         controller: _tabController,
                         labelColor: AppColors.primary,
@@ -172,14 +210,20 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
                                     ],
                                   ),
                                 )
-                              : _entries.isEmpty
+                              : _filteredEntries.isEmpty
                                   ? Center(
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(Icons.book_outlined, size: 48, color: subColor.withOpacity(0.5)),
                                           const SizedBox(height: 12),
-                                          Text('No entries yet.\nTap + to write your first reflection.', textAlign: TextAlign.center, style: TextStyle(color: subColor)),
+                                          Text(
+                                            _searchActive && _searchCtrl.text.isNotEmpty
+                                                ? 'No entries match your search.'
+                                                : 'No entries yet.\nTap + to write your first reflection.',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(color: subColor),
+                                          ),
                                         ],
                                       ),
                                     )
@@ -188,9 +232,9 @@ class _MySpiritualJournalScreenState extends State<MySpiritualJournalScreen>
                                       onRefresh: _loadEntries,
                                       child: ListView.builder(
                                         padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).padding.bottom + 96),
-                                        itemCount: _entries.length,
+                                        itemCount: _filteredEntries.length,
                                         itemBuilder: (ctx, i) {
-                                          final e = _entries[i];
+                                          final e = _filteredEntries[i];
                                           return Padding(
                                             padding: const EdgeInsets.only(bottom: 12),
                                             child: _ApiEntryCard(

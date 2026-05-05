@@ -86,8 +86,7 @@ class _SignupSecurityAgreementScreenState
         return;
       }
       // Otherwise it's a connectivity issue — set a local session and continue.
-      userNameNotifier.value =
-          signupFullNameNotifier.value.split(' ').first;
+      userNameNotifier.value = signupFullNameNotifier.value;
     }
 
     if (!mounted) return;

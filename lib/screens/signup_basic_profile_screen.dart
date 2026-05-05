@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import '../core/app_colors.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
 import 'signup_faith_background_screen.dart';
 import 'otp_verification_screen.dart';
 
@@ -301,7 +302,7 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
       // Save name
       final name = _nameCtrl.text.trim();
       if (name.isNotEmpty) {
-        userNameNotifier.value = name.split(' ').first;
+        userNameNotifier.value = name;
         signupFullNameNotifier.value = name;
       }
       // Register this email so it cannot be used again
@@ -333,6 +334,7 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
             maskedContact: maskedPhone,
             onVerified: () {
               phoneVerifiedNotifier.value = true;
+              ApiService.saveVerification(phoneVerified: true).catchError((_) {});
               // ── Step 2: Verify email ──────────────────────────────────
               final emailMasked = _maskEmail(email);
               Navigator.pushReplacement(
@@ -344,6 +346,7 @@ class _SignupBasicProfileScreenState extends State<SignupBasicProfileScreen> {
                     maskedContact: emailMasked,
                     onVerified: () {
                       emailVerifiedNotifier.value = true;
+                      ApiService.saveVerification(emailVerified: true).catchError((_) {});
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(

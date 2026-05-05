@@ -272,8 +272,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 await ApiService.updateProfile(
                                     name: name, bio: bio);
                                 // Update local notifiers immediately
-                                userNameNotifier.value =
-                                    name.split(' ').first;
+                                userNameNotifier.value = name;
                                 userBioNotifier.value = bio;
                                 if (ctx.mounted) Navigator.pop(ctx);
                               } catch (e) {
@@ -1258,18 +1257,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       },
                                     ))
                               // ── Normal member view ────────────────────────
-                              : _JoinChurchBanner(
-                                  isDark: isDark,
-                                  cardBg: cardBg,
-                                  borderColor: borderColor,
-                                  textColor: textColor,
-                                  subColor: subColor,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            const FindYourChurchScreen()),
-                                  ),
+                              : Column(
+                                  children: [
+                                    _JoinChurchBanner(
+                                      isDark: isDark,
+                                      cardBg: cardBg,
+                                      borderColor: borderColor,
+                                      textColor: textColor,
+                                      subColor: subColor,
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                const FindYourChurchScreen()),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _CreateChurchBanner(
+                                      isDark: isDark,
+                                      cardBg: cardBg,
+                                      borderColor: borderColor,
+                                      textColor: textColor,
+                                      subColor: subColor,
+                                      onTap: () {
+                                        isPastorNotifier.value = true;
+                                        ApiService.setPastorFlag().catchError((_) {});
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const CreateChurchScreen()),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                         ),
                         const SizedBox(height: 20),

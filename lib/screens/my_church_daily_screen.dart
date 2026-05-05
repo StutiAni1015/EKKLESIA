@@ -14,6 +14,7 @@ import 'member_facial_scan_screen.dart';
 import 'worship_hub_screen.dart';
 import 'church_plan_screen.dart';
 import 'add_prayer_request_screen.dart';
+import 'lyrics_screen.dart';
 
 // Dusty rose is the accent for this community screen
 const _rose = Color(0xFFD7A49A);
@@ -1307,12 +1308,8 @@ class _MyChurchDailyScreenState extends State<MyChurchDailyScreen> {
                                         ),
                                       ),
                                       GestureDetector(
-                                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Lyrics coming soon!'),
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        ),
+                                        onTap: () => Navigator.push(context,
+                                          MaterialPageRoute(builder: (_) => const LyricsScreen())),
                                         child: Row(
                                           children: [
                                             Text(

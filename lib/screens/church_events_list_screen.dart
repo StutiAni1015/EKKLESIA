@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
+import '../service/api_service.dart';
 
 class ChurchEventsListScreen extends StatefulWidget {
   final String churchName;
@@ -21,6 +23,8 @@ class _ChurchEventsListScreenState
     extends State<ChurchEventsListScreen> {
   int _filterIndex = 0;
   final Set<int> _registered = {};
+  bool _loading = true;
+  List<_Event> _events = [];
 
   static const sage = Color(0xFFB6C9BB);
   static const babyBlue = Color(0xFFB9CFDF);
@@ -28,20 +32,67 @@ class _ChurchEventsListScreenState
 
   static const _filters = ['All', 'This Week', 'This Month', 'Free'];
 
-  // Events are created by church leaders — no hardcoded events.
-  static const List<_Event> _events = [];
-
   List<_Event> get _filtered {
     switch (_filterIndex) {
       case 1:
         return _events.where((e) => e.isThisWeek).toList();
       case 2:
         return _events.where((e) => e.isThisMonth).toList();
-      case 3:
-        return _events.where((e) => e.isFree).toList();
       default:
         return _events;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    final churchId = myChurchIdNotifier.value;
+    if (churchId == null) { setState(() => _loading = false); return; }
+    try {
+      final list = await ApiService.getChurchEvents(churchId);
+      if (!mounted) return;
+      final now = DateTime.now();
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      final endOfWeek   = startOfWeek.add(const Duration(days: 6));
+      setState(() {
+        _events = list.map<_Event>((raw) {
+          final m   = raw as Map<String, dynamic>;
+          final dt  = DateTime.tryParse(m['date']?.toString() ?? '') ?? now;
+          final inWeek  = !dt.isBefore(startOfWeek) && !dt.isAfter(endOfWeek);
+          final inMonth = dt.year == now.year && dt.month == now.month;
+          final dateStr = '${_monthName(dt.month)} ${dt.day}, ${dt.year}';
+          final timeStr = dt.hour == 0 && dt.minute == 0 ? 'TBD' : _formatTime(dt);
+          return _Event(
+            title: m['title']?.toString() ?? 'Event',
+            date: dateStr,
+            time: timeStr,
+            location: m['location']?.toString() ?? '',
+            description: m['description']?.toString() ?? '',
+            isThisWeek: inWeek,
+            isThisMonth: inMonth,
+            id: m['_id']?.toString() ?? '',
+          );
+        }).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  static String _monthName(int m) => const [
+    '', 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+  ][m];
+
+  static String _formatTime(DateTime dt) {
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final m = dt.minute.toString().padLeft(2, '0');
+    final suffix = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$h:$m $suffix';
   }
 
   @override
@@ -137,7 +188,9 @@ class _ChurchEventsListScreenState
 
         // Events list
         Expanded(
-          child: _filtered.isEmpty
+          child: _loading
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              : _filtered.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -162,7 +215,10 @@ class _ChurchEventsListScreenState
                     ],
                   ),
                 )
-              : ListView.separated(
+              : RefreshIndicator(
+                color: AppColors.primary,
+                onRefresh: _loadEvents,
+                child: ListView.separated(
                   padding:
                       const EdgeInsets.fromLTRB(16, 8, 16, 32),
                   itemCount: _filtered.length,
@@ -188,50 +244,13 @@ class _ChurchEventsListScreenState
                       clipBehavior: Clip.antiAlias,
                       child: Column(
                         children: [
-                          // Event image placeholder
+                          // Event header banner
                           Container(
-                            height: 90,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: e.gradientColors,
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Stack(
-                              children: [
-                                Center(
-                                  child: Icon(Icons.event,
-                                      size: 36,
-                                      color: e.iconColor
-                                          .withOpacity(0.3)),
-                                ),
-                                if (e.isFree)
-                                  Positioned(
-                                    top: 10,
-                                    right: 10,
-                                    child: Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF22C55E),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        'FREE',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                            height: 72,
+                            color: AppColors.primary.withOpacity(0.08),
+                            child: Center(
+                              child: Icon(Icons.event_rounded,
+                                  size: 34, color: AppColors.primary.withOpacity(0.4)),
                             ),
                           ),
                           Padding(
@@ -240,43 +259,6 @@ class _ChurchEventsListScreenState
                               crossAxisAlignment:
                                   CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: e.categoryColor
-                                            .withOpacity(0.12),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        e.category,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          color: e.categoryColor,
-                                        ),
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    if (e.spots != null)
-                                      Text(
-                                        '${e.spots} spots left',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: e.spots! < 25
-                                              ? const Color(0xFFF59E0B)
-                                              : subColor,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
                                 Text(
                                   e.title,
                                   style: TextStyle(
@@ -285,7 +267,14 @@ class _ChurchEventsListScreenState
                                     color: textColor,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
+                                if (e.description.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(e.description,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(fontSize: 12, color: subColor)),
+                                ],
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
                                     Icon(Icons.calendar_today_outlined,
@@ -305,18 +294,20 @@ class _ChurchEventsListScreenState
                                             color: subColor)),
                                   ],
                                 ),
+                                if (e.location.isNotEmpty) ...[
                                 const SizedBox(height: 3),
                                 Row(
                                   children: [
                                     Icon(Icons.location_on_outlined,
                                         size: 12, color: subColor),
                                     const SizedBox(width: 4),
-                                    Text(e.location,
+                                    Expanded(child: Text(e.location,
                                         style: TextStyle(
                                             fontSize: 12,
-                                            color: subColor)),
+                                            color: subColor))),
                                   ],
                                 ),
+                                ],
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [
@@ -403,6 +394,7 @@ class _ChurchEventsListScreenState
                     );
                   },
                 ),
+              ),
         ),
       ],
     );
@@ -421,31 +413,23 @@ class _ChurchEventsListScreenState
 // ── Data model ────────────────────────────────────────────────────────────────
 
 class _Event {
+  final String id;
   final String title;
   final String date;
   final String time;
   final String location;
-  final String category;
-  final Color categoryColor;
-  final List<Color> gradientColors;
-  final Color iconColor;
-  final bool isFree;
+  final String description;
   final bool isThisWeek;
   final bool isThisMonth;
-  final int? spots;
 
   const _Event({
+    required this.id,
     required this.title,
     required this.date,
     required this.time,
     required this.location,
-    required this.category,
-    required this.categoryColor,
-    required this.gradientColors,
-    required this.iconColor,
-    required this.isFree,
+    required this.description,
     required this.isThisWeek,
     required this.isThisMonth,
-    required this.spots,
   });
 }

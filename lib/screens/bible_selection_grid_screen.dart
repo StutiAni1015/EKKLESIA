@@ -314,13 +314,13 @@ class _BibleSelectionGridScreenState
                     active: false,
                     color: subColor),
                 Transform.translate(
-                  offset: const Offset(0, -16),
+                  offset: const Offset(0, -12),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
@@ -334,13 +334,12 @@ class _BibleSelectionGridScreenState
                           ],
                         ),
                         child: const Icon(Icons.menu_book,
-                            color: Colors.white, size: 26),
+                            color: Colors.white, size: 24),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         'BIBLE',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
                           color: AppColors.primary,

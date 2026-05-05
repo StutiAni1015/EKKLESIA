@@ -5,6 +5,7 @@ import 'review_member_approval_screen.dart';
 import 'content_moderation_screen.dart';
 import 'pastor_send_notification_screen.dart';
 import 'treasury_access_code_screen.dart';
+import 'church_profile_details_screen.dart';
 
 class PastorAdminDashboardScreen extends StatefulWidget {
   const PastorAdminDashboardScreen({super.key});
@@ -283,7 +284,7 @@ class _PastorAdminDashboardScreenState
                               cardBg: cardBg,
                               borderColor: borderColor,
                               textColor: textColor,
-                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Church Profile coming soon!'), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating)),
+                              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChurchProfileDetailsScreen())),
                             ),
                             _DashCard(
                               icon: Icons.gavel,

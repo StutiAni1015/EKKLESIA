@@ -107,6 +107,37 @@ router.put("/privacy", protect, async (req, res) => {
   }
 });
 
+// ── PATCH /api/user/verify — save identity verification status ───────────────
+router.patch("/verify", protect, async (req, res) => {
+  try {
+    const { emailVerified, phoneVerified, faceVerified } = req.body;
+    const updates = {};
+    if (emailVerified !== undefined) updates.emailVerified = emailVerified;
+    if (phoneVerified !== undefined) updates.phoneVerified = phoneVerified;
+    if (faceVerified  !== undefined) updates.faceVerified  = faceVerified;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true })
+      .select("emailVerified phoneVerified faceVerified");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── PATCH /api/user/set-pastor — mark authenticated user as pastor ────────────
+router.patch("/set-pastor", protect, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { isPastor: true },
+      { new: true }
+    ).select("isPastor");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── GET /api/user/:id — public profile of any user ───────────────────────────
 router.get("/:id", async (req, res) => {
   try {

@@ -110,18 +110,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     await Future.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
 
-    // Demo: "000000" always fails; anything else succeeds
-    if (code == '000000') {
-      setState(() {
-        _verifying = false;
-        _wrongCode = true;
-      });
-      for (final c in _controllers) c.clear();
-      _focusNodes[0].requestFocus();
-    } else {
-      setState(() => _verifying = false);
-      widget.onVerified();
-    }
+    setState(() => _verifying = false);
+    widget.onVerified();
   }
 
   void _resend() {

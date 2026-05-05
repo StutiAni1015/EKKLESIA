@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../core/app_colors.dart';
 
 class BibleReaderScreen extends StatefulWidget {
@@ -16,62 +18,81 @@ class BibleReaderScreen extends StatefulWidget {
 }
 
 class _BibleReaderScreenState extends State<BibleReaderScreen> {
-  String _version = 'NIV';
+  String _version = 'WEB';
   bool _isBookmarked = false;
   bool _showHighlightInfo = false;
+  bool _loading = true;
+  String? _error;
+  String _chapterTitle = '';
+  List<(int, String, bool)> _verses = [];
 
-  static const _versions = ['NIV', 'ESV', 'KJV', 'NLT', 'Message'];
+  static const _versions = ['WEB', 'KJV', 'BBE', 'OEB', 'Darby'];
+  static const _translationCodes = {
+    'WEB': 'web', 'KJV': 'kjv', 'BBE': 'bbe', 'OEB': 'oeb', 'Darby': 'darby',
+  };
 
-  // Scripture data for John 1
-  static const _chapterTitle = 'The Word Became Flesh';
-  static const _verses = [
-    (
-      1,
-      'In the beginning was the Word, and the Word was with God, and the Word was God.',
-      false
-    ),
-    (2, 'He was with God in the beginning.', false),
-    (
-      3,
-      'Through him all things were made; without him nothing was made that has been made.',
-      false
-    ),
-    (
-      4,
-      'In him was life, and that life was the light of all mankind.',
-      false
-    ),
-    (
-      5,
-      'The light shines in the darkness, and the darkness has not overcome it.',
-      true // highlighted
-    ),
-    (
-      6,
-      'There was a man sent from God whose name was John.',
-      false
-    ),
-    (
-      7,
-      'He came as a witness to testify concerning that light, so that through him all might believe.',
-      false
-    ),
-    (
-      8,
-      'He himself was not the light; he came only as a witness to the light.',
-      false
-    ),
-    (
-      9,
-      'The true light that gives light to everyone was coming into the world.',
-      false
-    ),
-    (10, 'He was in the world, and though the world was made through him, the world did not recognize him.', false),
-    (11, 'He came to that which was his own, but his own did not receive him.', false),
-    (12, 'Yet to all who did receive him, to those who believed in his name, he gave the right to become children of God.', false),
-    (13, 'Children born not of natural descent, nor of human decision or a husband\'s will, but born of God.', false),
-    (14, 'The Word became flesh and made his dwelling among us. We have seen his glory, the glory of the one and only Son, who came from the Father, full of grace and truth.', false),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchChapter();
+  }
+
+  // Maps full book names to the slug bible-api.com expects.
+  static const _slugOverrides = {
+    'song of solomon': 'song+of+songs',
+    'psalms': 'psalms',
+    '1 chronicles': '1+chronicles',
+    '2 chronicles': '2+chronicles',
+    '1 thessalonians': '1+thessalonians',
+    '2 thessalonians': '2+thessalonians',
+    '1 timothy': '1+timothy',
+    '2 timothy': '2+timothy',
+    '1 corinthians': '1+corinthians',
+    '2 corinthians': '2+corinthians',
+    '1 samuel': '1+samuel',
+    '2 samuel': '2+samuel',
+    '1 kings': '1+kings',
+    '2 kings': '2+kings',
+    '1 peter': '1+peter',
+    '2 peter': '2+peter',
+    '1 john': '1+john',
+    '2 john': '2+john',
+    '3 john': '3+john',
+    'philemon': 'philemon',
+  };
+
+  String _bookSlug(String book) {
+    final lower = book.toLowerCase();
+    return _slugOverrides[lower] ?? lower.replaceAll(' ', '+');
+  }
+
+  Future<void> _fetchChapter() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final slug = _bookSlug(widget.bookName);
+      final code = _translationCodes[_version] ?? 'web';
+      final url = Uri.parse(
+          'https://bible-api.com/$slug+${widget.chapter}?translation=$code');
+      final r = await http.get(url).timeout(const Duration(seconds: 15));
+      if (r.statusCode != 200) throw 'Server error ${r.statusCode}';
+      final data = jsonDecode(r.body) as Map<String, dynamic>;
+      final raw = data['verses'] as List<dynamic>;
+      setState(() {
+        _chapterTitle = data['reference']?.toString() ?? '';
+        _verses = raw.map<(int, String, bool)>((v) {
+          final m = v as Map<String, dynamic>;
+          return (
+            (m['verse'] as num?)?.toInt() ?? 0,
+            (m['text']?.toString() ?? '').trim(),
+            false,
+          );
+        }).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +145,10 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'New International Version (NIV)',
+                                    _version == 'WEB' ? 'World English Bible (WEB)'
+                                      : _version == 'KJV' ? 'King James Version (KJV)'
+                                      : _version == 'BBE' ? 'Bible in Basic English (BBE)'
+                                      : _version,
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: subColor,
@@ -162,8 +186,10 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                             final v = _versions[i];
                             final active = _version == v;
                             return GestureDetector(
-                              onTap: () =>
-                                  setState(() => _version = v),
+                              onTap: () {
+                                setState(() => _version = v);
+                                _fetchChapter();
+                              },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 14, vertical: 8),
@@ -203,7 +229,31 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
 
                 // Scripture body
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      : _error != null
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.wifi_off, size: 48, color: subColor),
+                                    const SizedBox(height: 12),
+                                    Text('Could not load chapter', style: TextStyle(fontSize: 16, color: textColor, fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 6),
+                                    Text('Check your connection and try again.', style: TextStyle(color: subColor, fontSize: 13)),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: _fetchChapter,
+                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(
                         24,
                         24,
@@ -361,13 +411,13 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                     color: subColor),
                 // Elevated Bible FAB
                 Transform.translate(
-                  offset: const Offset(0, -16),
+                  offset: const Offset(0, -12),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
@@ -392,7 +442,7 @@ class _BibleReaderScreenState extends State<BibleReaderScreen> {
                       Text(
                         'BIBLE',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
                           color: AppColors.primary,

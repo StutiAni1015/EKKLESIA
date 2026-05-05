@@ -68,11 +68,17 @@ class _EzerScreenState extends State<EzerScreen>
   final List<_Msg> _messages = [];
   bool _loading = false;
 
-  // Typing animation
-  late final AnimationController _dotAnim = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
+  // Typing animation — initialised in initState to avoid vsync lookup on dispose
+  late final AnimationController _dotAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _dotAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
 
   @override
   void dispose() {

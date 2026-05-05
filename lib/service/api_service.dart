@@ -9,9 +9,9 @@ final authTokenNotifier  = ValueNotifier<String?>( null);
 final authUserIdNotifier = ValueNotifier<String?>( null);
 
 class ApiService {
-  // 127.0.0.1 for iOS simulator; use 10.0.2.2 for Android emulator.
-  static const String _base = 'http://127.0.0.1:4000/api';
-  static const String baseUrl = 'http://127.0.0.1:4000';
+  // Use Mac's LAN IP so physical devices on the same WiFi can reach the dev server.
+  static const String _base   = 'http://192.168.1.19:4000/api';
+  static const String baseUrl = 'http://192.168.1.19:4000';
 
   // ─── helpers ───────────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ class ApiService {
     authTokenNotifier.value  = body['token']  as String?;
     authUserIdNotifier.value = body['userId'] as String?;
     if (body['name'] != null) {
-      userNameNotifier.value = (body['name'] as String).split(' ').first;
+      userNameNotifier.value = body['name'] as String;
     }
     // Load full profile so isPastor, bio, country etc. are available immediately.
     try {
@@ -100,14 +100,47 @@ class ApiService {
   /// Writes a profile map (from GET /api/user/profile) into all session notifiers.
   static void _applyProfile(Map<String, dynamic> data) {
     final name = data['name'] as String? ?? '';
-    userNameNotifier.value           = name.split(' ').first;
+    userNameNotifier.value           = name;
     userBioNotifier.value            = data['bio'] as String? ?? '';
     userCountryNotifier.value        = data['country'] as String? ?? 'US';
     userCountryIsoNotifier.value     = data['countryIso'] as String? ?? 'US';
     userCityNotifier.value           = data['city'] as String? ?? '';
     userCurrencyNotifier.value       = data['currency'] as String? ?? 'USD';
     userCurrencySymbolNotifier.value = data['currencySymbol'] as String? ?? '\$';
-    isPastorNotifier.value           = data['isPastor'] as bool? ?? false;
+    // Only promote to pastor, never demote — prevents logout/login wiping role
+    if (data['isPastor'] as bool? ?? false) {
+      isPastorNotifier.value = true;
+    }
+    emailVerifiedNotifier.value  = data['emailVerified']  as bool? ?? false;
+    phoneVerifiedNotifier.value  = data['phoneVerified']  as bool? ?? false;
+    faceVerifiedNotifier.value   = data['faceVerified']   as bool? ?? false;
+    accountVerifiedNotifier.value = emailVerifiedNotifier.value &&
+        phoneVerifiedNotifier.value && faceVerifiedNotifier.value;
+  }
+
+  /// PATCH /api/user/verify
+  static Future<void> saveVerification({
+    bool? emailVerified,
+    bool? phoneVerified,
+    bool? faceVerified,
+  }) async {
+    final payload = <String, dynamic>{};
+    if (emailVerified != null) payload['emailVerified'] = emailVerified;
+    if (phoneVerified != null) payload['phoneVerified'] = phoneVerified;
+    if (faceVerified  != null) payload['faceVerified']  = faceVerified;
+    await http.patch(
+      Uri.parse('$_base/user/verify'),
+      headers: _headers,
+      body: jsonEncode(payload),
+    );
+  }
+
+  /// PATCH /api/user/set-pastor — marks the user as a pastor in the backend.
+  static Future<void> setPastorFlag() async {
+    await http.patch(
+      Uri.parse('$_base/user/set-pastor'),
+      headers: _headers,
+    );
   }
 
   // ─── user profile ──────────────────────────────────────────────────────────

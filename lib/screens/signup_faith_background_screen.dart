@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/app_colors.dart';
+import '../core/user_session.dart';
+import '../service/api_service.dart';
 import 'signup_community_preferences_screen.dart';
 import 'member_facial_scan_screen.dart';
 import 'pastor_facial_scan_screen.dart';
@@ -65,8 +67,11 @@ class _SignupFaithBackgroundScreenState
   }
 
   void _onContinue() {
-    // Route to the appropriate facial scan based on role, then continue signup
     final isPastor = _role == 'Pastor';
+    if (isPastor) {
+      isPastorNotifier.value = true;
+      ApiService.setPastorFlag().catchError((_) {});
+    }
     Navigator.push(
       context,
       MaterialPageRoute(

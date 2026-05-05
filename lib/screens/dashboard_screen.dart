@@ -17,7 +17,7 @@ import 'location_currency_screen.dart';
 import 'child_selector_screen.dart';
 import 'ezer_screen.dart';
 import 'spiritual_focus_mode_screen.dart';
-// import 'global_prayer_map_screen.dart'; // temporarily disabled
+import 'global_prayer_map_screen.dart';
 import '../widgets/tap_scale.dart';
 import '../service/api_service.dart';
 
@@ -85,7 +85,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           floatingActionButton: buildCenterFab(context),
           floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         ),
-        const _EzerFloatingButton(),
+        // Ezer disabled
+        // const _EzerFloatingButton(),
       ],
     );
   }
@@ -165,7 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ValueListenableBuilder<String>(
                   valueListenable: userNameNotifier,
                   builder: (context, name, _) => Text(
-                    name.isEmpty ? 'Friend' : name,
+                    name.isEmpty ? 'Friend' : name.split(' ').first,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -715,10 +716,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _QuickAction(Icons.favorite, 'Prayer Requests', _roseBg, _dustyRose,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const PrayerCommunityFeedScreen()))),
-      // Global Prayer Map — temporarily disabled
-      // _QuickAction(Icons.public, 'Global Prayer', _blueBg, _babyBlue,
-      //     () => Navigator.push(context,
-      //         MaterialPageRoute(builder: (_) => const GlobalPrayerMapScreen()))),
+      _QuickAction(Icons.public, 'Global Prayer', _blueBg, _babyBlue,
+          () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const GlobalPrayerMapScreen()))),
       _QuickAction(Icons.headset, 'Saved Sermons', _nudeBg, _nude,
           () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const SavedSermonsScreen()))),

@@ -6,6 +6,7 @@ import '../core/app_colors.dart';
 import 'member_verification_successful_screen.dart';
 import 'otp_verification_screen.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
 
 class MemberFacialScanScreen extends StatefulWidget {
   /// When provided, called after a successful scan instead of the default
@@ -48,6 +49,7 @@ class _MemberFacialScanScreenState extends State<MemberFacialScanScreen>
               verificationTarget: 'registered contact',
               onVerified: () {
                 faceVerifiedNotifier.value = true;
+                ApiService.saveVerification(faceVerified: true).catchError((_) {});
                 if (widget.onSuccess != null) {
                   widget.onSuccess!();
                 } else {

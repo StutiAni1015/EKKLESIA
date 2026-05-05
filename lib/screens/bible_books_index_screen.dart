@@ -43,6 +43,8 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
         ('2 Samuel', 24, _primaryC),
         ('1 Kings', 22, _sageC),
         ('2 Kings', 25, _roseC),
+        ('1 Chronicles', 29, _blueC),
+        ('2 Chronicles', 36, _primaryC),
         ('Ezra', 10, _blueC),
         ('Nehemiah', 13, _primaryC),
         ('Esther', 10, _roseC),
@@ -74,7 +76,14 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
         ('Hosea', 14, _roseC),
         ('Joel', 3, _sageC),
         ('Amos', 9, _primaryC),
-        ('Micah', 7, _blueC),
+        ('Obadiah', 1, _blueC),
+        ('Jonah', 4, _roseC),
+        ('Micah', 7, _primaryC),
+        ('Nahum', 3, _sageC),
+        ('Habakkuk', 3, _blueC),
+        ('Zephaniah', 3, _roseC),
+        ('Haggai', 2, _primaryC),
+        ('Zechariah', 14, _sageC),
         ('Malachi', 4, _roseC),
       ]
     ),
@@ -101,6 +110,12 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
         ('Ephesians', 6, _blueC),
         ('Philippians', 4, _roseC),
         ('Colossians', 4, _sageC),
+        ('1 Thessalonians', 5, _blueC),
+        ('2 Thessalonians', 3, _roseC),
+        ('1 Timothy', 6, _primaryC),
+        ('2 Timothy', 4, _sageC),
+        ('Titus', 3, _blueC),
+        ('Philemon', 1, _roseC),
       ]
     ),
     (
@@ -111,7 +126,9 @@ class _BibleBooksIndexScreenState extends State<BibleBooksIndexScreen> {
         ('1 Peter', 5, _blueC),
         ('2 Peter', 3, _roseC),
         ('1 John', 5, _primaryC),
-        ('Jude', 1, _sageC),
+        ('2 John', 1, _sageC),
+        ('3 John', 1, _blueC),
+        ('Jude', 1, _roseC),
       ]
     ),
     (

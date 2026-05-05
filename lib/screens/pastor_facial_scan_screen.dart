@@ -6,6 +6,7 @@ import 'verification_successful_screen.dart';
 import 'scan_failure_screen.dart';
 import 'otp_verification_screen.dart';
 import '../core/user_session.dart';
+import '../service/api_service.dart';
 
 class PastorFacialScanScreen extends StatefulWidget {
   /// When provided, called after a successful scan instead of the default
@@ -72,6 +73,7 @@ class _PastorFacialScanScreenState extends State<PastorFacialScanScreen>
             verificationTarget: 'registered contact',
             onVerified: () {
               faceVerifiedNotifier.value = true;
+              ApiService.saveVerification(faceVerified: true).catchError((_) {});
               if (widget.onSuccess != null) {
                 widget.onSuccess!();
               } else {

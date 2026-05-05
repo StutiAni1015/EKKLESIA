@@ -62,6 +62,11 @@ class _MemberNotificationAlertScreenState
     for (final n in unread) { _markRead(n['_id'] as String); }
   }
 
+  Future<void> _deleteNotification(String id) async {
+    setState(() => _notifications.removeWhere((n) => n['_id'] == id));
+    try { await ApiService.deleteNotification(id); } catch (_) {}
+  }
+
   // ── Map type to icon / colour ────────────────────────────────────────────────
   static (IconData, Color, String) _typeStyle(String? type) => switch (type) {
     'announcement' => (Icons.campaign_rounded,        AppColors.primary,          'Announcement'),
@@ -201,7 +206,20 @@ class _MemberNotificationAlertScreenState
                               final body    = n['message'] as String? ?? '';
                               final timeStr = _timeAgo(n['createdAt'] as String?);
 
-                              return GestureDetector(
+                              return Dismissible(
+                                key: ValueKey(id),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(right: 20),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+                                ),
+                                onDismissed: (_) => _deleteNotification(id),
+                                child: GestureDetector(
                                 onTap: () {
                                   setState(() => _expandedIdx = isOpen ? -1 : i);
                                   if (isNew) _markRead(id);
@@ -303,6 +321,7 @@ class _MemberNotificationAlertScreenState
                                     ],
                                   ),
                                 ),
+                              ),
                               );
                             },
                           ),
